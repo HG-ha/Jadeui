@@ -1,22 +1,22 @@
 #!/usr/bin/env python
 """
-构建 JadeUI wheel 包
+Build JadeUI wheel packages
 
-此脚本用于构建包含 DLL 的平台特定 wheel 包。
+This script builds platform-specific wheel packages containing the DLL.
 
-使用方法:
+Usage:
     python scripts/build_wheels.py
 
-构建流程:
-    1. 自动从 GitHub 下载对应版本的 DLL
-    2. 构建平台特定的 wheel 包
-    3. 构建源码包
+Build process:
+    1. Auto-download DLL from GitHub releases
+    2. Build platform-specific wheel packages
+    3. Build source distribution
 
-构建输出:
+Output:
     dist/
-    ├── jadeui-x.x.x-py3-none-win_amd64.whl  (64位 Windows)
-    ├── jadeui-x.x.x-py3-none-win32.whl      (32位 Windows)
-    └── jadeui-x.x.x.tar.gz                   (源码包)
+    ├── jadeui-x.x.x-py3-none-win_amd64.whl  (64-bit Windows)
+    ├── jadeui-x.x.x-py3-none-win32.whl      (32-bit Windows)
+    └── jadeui-x.x.x.tar.gz                   (source)
 """
 
 import re
@@ -29,46 +29,46 @@ import urllib.request
 import zipfile
 from pathlib import Path
 
-# 项目根目录
+# Project root directory
 ROOT_DIR = Path(__file__).parent.parent
 JADEUI_DIR = ROOT_DIR / "jadeui"
 DLL_DIR = JADEUI_DIR / "dll"
 DIST_DIR = ROOT_DIR / "dist"
 
-# GitHub 配置
+# GitHub config
 GITHUB_REPO = "JadeViewDocs/library"
 GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
 
 
 def get_dll_version() -> str:
-    """从 jadeui/downloader.py 读取 DLL_VERSION"""
+    """Read DLL_VERSION from jadeui/downloader.py"""
     downloader_path = JADEUI_DIR / "downloader.py"
     content = downloader_path.read_text(encoding="utf-8")
     match = re.search(r'DLL_VERSION\s*=\s*"([^"]+)"', content)
     if match:
         return match.group(1)
-    raise RuntimeError("无法从 jadeui/downloader.py 读取 DLL_VERSION")
+    raise RuntimeError("Cannot read DLL_VERSION from jadeui/downloader.py")
 
 
 def download_dll(arch: str, version: str) -> bool:
-    """从 GitHub 下载 DLL
+    """Download DLL from GitHub
 
     Args:
-        arch: 'x64' 或 'x86'
-        version: DLL 版本号
+        arch: 'x64' or 'x86'
+        version: DLL version
 
     Returns:
-        成功返回 True
+        True if successful
     """
     zip_name = f"JadeView-dist_{arch}.zip"
     url = f"{GITHUB_RELEASE_URL}/v{version}/{zip_name}"
     target_dir = ROOT_DIR / f"JadeView-dist_{arch}"
 
-    print(f"⬇️  下载 {arch} DLL (v{version})...")
-    print(f"   URL: {url}")
+    print(f"[*] Downloading {arch} DLL (v{version})...")
+    print(f"    URL: {url}")
 
     try:
-        # 下载到临时文件
+        # Download to temp file
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
             tmp_path = Path(tmp_file.name)
 
@@ -90,37 +90,37 @@ def download_dll(arch: str, version: str) -> bool:
 
                     if total_size > 0:
                         percent = (downloaded / total_size) * 100
-                        bar = "█" * int(percent // 5) + "░" * (20 - int(percent // 5))
-                        print(f"\r   [{bar}] {percent:.1f}%", end="", flush=True)
+                        bar = "#" * int(percent // 5) + "-" * (20 - int(percent // 5))
+                        print(f"\r    [{bar}] {percent:.1f}%", end="", flush=True)
 
-                print()  # 换行
+                print()  # newline
 
-        # 解压
-        print(f"📂 解压到 {target_dir}...")
+        # Extract
+        print(f"[*] Extracting to {target_dir}...")
         if target_dir.exists():
             shutil.rmtree(target_dir)
 
         with zipfile.ZipFile(tmp_path, "r") as zip_ref:
             zip_ref.extractall(ROOT_DIR)
 
-        # 清理临时文件
+        # Cleanup temp file
         tmp_path.unlink()
 
-        print(f"✅ {arch} DLL 下载完成")
+        print(f"[OK] {arch} DLL downloaded successfully")
         return True
 
     except urllib.error.HTTPError as e:
-        print(f"\n❌ 下载失败: HTTP {e.code} - {e.reason}")
+        print(f"\n[ERROR] Download failed: HTTP {e.code} - {e.reason}")
         return False
     except urllib.error.URLError as e:
-        print(f"\n❌ 网络错误: {e.reason}")
+        print(f"\n[ERROR] Network error: {e.reason}")
         return False
     except Exception as e:
-        print(f"\n❌ 下载失败: {e}")
+        print(f"\n[ERROR] Download failed: {e}")
         return False
 
 
-# 架构配置
+# Architecture config
 ARCH_CONFIG = {
     "x64": {
         "src_dir": "JadeView-dist_x64",
@@ -136,86 +136,86 @@ ARCH_CONFIG = {
 
 
 def clean():
-    """清理构建目录"""
-    print("🧹 清理构建目录...")
+    """Clean build directories"""
+    print("[*] Cleaning build directories...")
 
-    # 清理 dll 目录
+    # Clean dll directory
     if DLL_DIR.exists():
         shutil.rmtree(DLL_DIR)
 
-    # 清理 dist 目录
+    # Clean dist directory
     if DIST_DIR.exists():
         shutil.rmtree(DIST_DIR)
 
-    # 清理 build 目录
+    # Clean build directory
     build_dir = ROOT_DIR / "build"
     if build_dir.exists():
         shutil.rmtree(build_dir)
 
-    # 清理 egg-info
+    # Clean egg-info
     for p in ROOT_DIR.glob("*.egg-info"):
         shutil.rmtree(p)
 
 
 def prepare_dll(arch: str) -> bool:
-    """准备 DLL 文件
+    """Prepare DLL files
 
     Args:
-        arch: 'x64' 或 'x86'
+        arch: 'x64' or 'x86'
 
     Returns:
-        成功返回 True
+        True if successful
     """
     config = ARCH_CONFIG[arch]
     src_dir = ROOT_DIR / config["src_dir"]
 
     if not src_dir.exists():
-        print(f"⚠️  未找到 {src_dir}")
-        print(f"   请先下载并解压 {config['src_dir']}.zip")
+        print(f"[WARN] Not found: {src_dir}")
+        print(f"       Please download and extract {config['src_dir']}.zip first")
         return False
 
-    # 创建目标目录
+    # Create target directory
     target_dir = DLL_DIR / config["src_dir"]
     target_dir.mkdir(parents=True, exist_ok=True)
 
-    # 复制所有文件
+    # Copy all files
     for src_file in src_dir.iterdir():
         dst_file = target_dir / src_file.name
         if src_file.is_file():
             shutil.copy2(src_file, dst_file)
-            print(f"   复制: {src_file.name}")
+            print(f"       Copied: {src_file.name}")
 
-    # 验证 DLL 存在
+    # Verify DLL exists
     dll_path = target_dir / config["dll_name"]
     if not dll_path.exists():
-        print(f"❌ 未找到 DLL: {dll_path}")
+        print(f"[ERROR] DLL not found: {dll_path}")
         return False
 
-    print(f"✅ {arch} DLL 准备完成")
+    print(f"[OK] {arch} DLL prepared")
     return True
 
 
 def build_wheel(arch: str) -> bool:
-    """构建特定架构的 wheel
+    """Build wheel for specific architecture
 
     Args:
-        arch: 'x64' 或 'x86'
+        arch: 'x64' or 'x86'
 
     Returns:
-        成功返回 True
+        True if successful
     """
     config = ARCH_CONFIG[arch]
 
-    print(f"\n📦 构建 {arch} wheel...")
+    print(f"\n[*] Building {arch} wheel...")
 
-    # 清理并准备 DLL
+    # Clean and prepare DLL
     if DLL_DIR.exists():
         shutil.rmtree(DLL_DIR)
 
     if not prepare_dll(arch):
         return False
 
-    # 构建 wheel
+    # Build wheel
     try:
         result = subprocess.run(
             [sys.executable, "-m", "build", "--wheel"],
@@ -225,41 +225,41 @@ def build_wheel(arch: str) -> bool:
         )
 
         if result.returncode != 0:
-            print("❌ 构建失败:")
+            print("[ERROR] Build failed:")
             print(result.stderr)
             return False
 
     except FileNotFoundError:
-        print("❌ 请先安装 build: pip install build")
+        print("[ERROR] Please install build first: pip install build")
         return False
 
-    # 重命名 wheel 以包含平台标签
+    # Rename wheel to include platform tag
     for whl in DIST_DIR.glob("jadeui-*.whl"):
-        # 解析文件名
+        # Parse filename
         name = whl.stem
         parts = name.split("-")
 
-        # 替换平台标签
+        # Replace platform tag
         if len(parts) >= 5:
             parts[-1] = config["wheel_tag"]
             new_name = "-".join(parts) + ".whl"
             new_path = whl.parent / new_name
 
-            # 如果目标已存在，先删除
+            # Delete if target exists
             if new_path.exists() and new_path != whl:
                 new_path.unlink()
 
             whl.rename(new_path)
-            print(f"✅ 构建完成: {new_name}")
+            print(f"[OK] Built: {new_name}")
 
     return True
 
 
 def build_sdist() -> bool:
-    """构建源码包"""
-    print("\n📦 构建源码包...")
+    """Build source distribution"""
+    print("\n[*] Building source distribution...")
 
-    # 清理 DLL 目录（源码包不包含 DLL）
+    # Clean DLL directory (source package doesn't include DLL)
     if DLL_DIR.exists():
         shutil.rmtree(DLL_DIR)
 
@@ -272,70 +272,70 @@ def build_sdist() -> bool:
         )
 
         if result.returncode != 0:
-            print("❌ 构建失败:")
+            print("[ERROR] Build failed:")
             print(result.stderr)
             return False
 
-        print("✅ 源码包构建完成")
+        print("[OK] Source distribution built")
         return True
 
     except FileNotFoundError:
-        print("❌ 请先安装 build: pip install build")
+        print("[ERROR] Please install build first: pip install build")
         return False
 
 
 def main():
-    """主函数"""
+    """Main function"""
     print("=" * 50)
-    print("JadeUI Wheel 构建工具")
+    print("JadeUI Wheel Build Tool")
     print("=" * 50)
 
-    # 获取 DLL 版本
+    # Get DLL version
     try:
         dll_version = get_dll_version()
-        print(f"\nDLL 版本: v{dll_version}")
+        print(f"\nDLL Version: v{dll_version}")
     except Exception as e:
-        print(f"\n❌ {e}")
+        print(f"\n[ERROR] {e}")
         return 1
 
-    # 检查或下载 DLL
+    # Check or download DLL
     has_x64 = (ROOT_DIR / "JadeView-dist_x64").exists()
     has_x86 = (ROOT_DIR / "JadeView-dist_x86").exists()
 
     if not has_x64:
-        print("\n未找到 x64 DLL，正在下载...")
+        print("\nx64 DLL not found, downloading...")
         has_x64 = download_dll("x64", dll_version)
 
     if not has_x86:
-        print("\n未找到 x86 DLL，正在下载...")
+        print("\nx86 DLL not found, downloading...")
         has_x86 = download_dll("x86", dll_version)
 
     if not has_x64 and not has_x86:
-        print("\n❌ 无法获取 DLL 文件!")
-        print(f"\n请手动下载 DLL (v{dll_version}):")
-        print(f"  1. 访问 https://github.com/{GITHUB_REPO}/releases/tag/v{dll_version}")
-        print("  2. 下载 JadeView-dist_x64.zip 和/或 JadeView-dist_x86.zip")
-        print("  3. 解压到项目根目录")
+        print("\n[ERROR] Cannot obtain DLL files!")
+        print(f"\nPlease download DLL manually (v{dll_version}):")
+        print(f"  1. Visit https://github.com/{GITHUB_REPO}/releases/tag/v{dll_version}")
+        print("  2. Download JadeView-dist_x64.zip and/or JadeView-dist_x86.zip")
+        print("  3. Extract to project root directory")
         return 1
 
-    print("\n可用的 DLL:")
+    print("\nAvailable DLLs:")
     if has_x64:
-        print("  ✅ x64 (JadeView-dist_x64)")
+        print("  [OK] x64 (JadeView-dist_x64)")
     else:
-        print("  ⚠️  x64 未找到")
+        print("  [--] x64 not found")
 
     if has_x86:
-        print("  ✅ x86 (JadeView-dist_x86)")
+        print("  [OK] x86 (JadeView-dist_x86)")
     else:
-        print("  ⚠️  x86 未找到")
+        print("  [--] x86 not found")
 
-    # 清理
+    # Clean
     clean()
 
-    # 确保 dist 目录存在
+    # Ensure dist directory exists
     DIST_DIR.mkdir(exist_ok=True)
 
-    # 构建 wheels
+    # Build wheels
     success = True
 
     if has_x64:
@@ -346,30 +346,30 @@ def main():
         if not build_wheel("x86"):
             success = False
 
-    # 构建源码包
+    # Build source distribution
     if not build_sdist():
         success = False
 
-    # 清理 DLL 目录
+    # Clean DLL directory
     if DLL_DIR.exists():
         shutil.rmtree(DLL_DIR)
 
-    # 结果
+    # Result
     print("\n" + "=" * 50)
     if success:
-        print("🎉 构建完成!")
-        print(f"\n输出目录: {DIST_DIR}")
+        print("[SUCCESS] Build completed!")
+        print(f"\nOutput directory: {DIST_DIR}")
         for f in sorted(DIST_DIR.iterdir()):
             size_mb = f.stat().st_size / 1024 / 1024
             print(f"  - {f.name} ({size_mb:.1f} MB)")
 
-        print("\n上传到 PyPI:")
+        print("\nUpload to PyPI:")
         print("  twine upload dist/*")
 
-        print("\n上传到 TestPyPI:")
+        print("\nUpload to TestPyPI:")
         print("  twine upload --repository testpypi dist/*")
     else:
-        print("❌ 构建失败，请检查错误信息")
+        print("[FAILED] Build failed, please check error messages")
         return 1
 
     return 0
@@ -377,4 +377,3 @@ def main():
 
 if __name__ == "__main__":
     sys.exit(main())
-
