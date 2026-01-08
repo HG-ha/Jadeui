@@ -80,7 +80,7 @@ from .downloader import (
 )
 from . import utils
 
-__version__ = "0.1.0"
+__version__ = "0.1.1"
 __author__ = "JadeView Team"
 __license__ = "MIT"
 

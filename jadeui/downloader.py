@@ -23,7 +23,7 @@ GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
 
 # DLL 版本号（可能与 SDK 版本不同）
 # 当 SDK 修复 bug 但 DLL 未更新时，此版本保持不变
-DLL_VERSION = "0.1.0"
+DLL_VERSION = "0.1.1"
 
 # 兼容旧代码
 VERSION = DLL_VERSION

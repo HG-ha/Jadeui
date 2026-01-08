@@ -205,6 +205,7 @@
             font-size: 11px;
             color: var(--text-secondary);
             word-break: break-all;
+            white-space: pre-wrap;
         }
     </style>
 </head>
@@ -317,10 +318,31 @@
                 const fileInfo = JSON.parse(data);
                 console.log('收到文件:', fileInfo);
                 
-                // 显示文件信息
-                document.getElementById('file-name').textContent = '📄 ' + fileInfo.name;
-                document.getElementById('file-path').textContent = fileInfo.path;
-                document.getElementById('file-info').classList.add('show');
+                // 新格式: { files: [{path, name, isDir}, ...], x, y }
+                if (fileInfo.files && fileInfo.files.length > 0) {
+                    const files = fileInfo.files.filter(f => !f.isDir);
+                    const folders = fileInfo.files.filter(f => f.isDir);
+                    const total = fileInfo.files.length;
+                    
+                    // 显示文件信息
+                    if (total === 1) {
+                        const item = fileInfo.files[0];
+                        const icon = item.isDir ? '📂' : '📄';
+                        const type = item.isDir ? '文件夹' : '文件';
+                        document.getElementById('file-name').textContent = icon + ' ' + item.name;
+                        document.getElementById('file-path').textContent = item.path;
+                    } else {
+                        let summary = [];
+                        if (files.length > 0) summary.push(files.length + ' 个文件');
+                        if (folders.length > 0) summary.push(folders.length + ' 个文件夹');
+                        
+                        document.getElementById('file-name').textContent = '📁 ' + summary.join(', ');
+                        document.getElementById('file-path').textContent = fileInfo.files.map(f => 
+                            (f.isDir ? '📂 ' : '📄 ') + f.name
+                        ).join('\n');
+                    }
+                    document.getElementById('file-info').classList.add('show');
+                }
                 
                 // 移除拖放高亮
                 dropZone.classList.remove('dragover');

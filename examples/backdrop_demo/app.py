@@ -75,8 +75,8 @@ def on_ready():
 
     window = Window(
         title="背景材料演示",
-        width=850,
-        height=620,
+        width=860,
+        height=680,
         url=f"{url}/index.html",
         remove_titlebar=True,
         transparent=True,  # 必须启用透明才能看到材料效果
@@ -85,13 +85,32 @@ def on_ready():
     
     # 监听文件拖放事件
     @window.on("file-drop")
-    def on_file_drop(file_path, mime_type, x, y):
-        print(f"📁 文件拖放: {file_path} ({mime_type}) at ({x:.0f}, {y:.0f})")
+    def on_file_drop(files, x, y):
+        """处理文件拖放事件
+        
+        Args:
+            files: 拖放的文件路径列表
+            x: 拖放位置 X 坐标
+            y: 拖放位置 Y 坐标
+        """
+        file_count = len([f for f in files if os.path.isfile(f)])
+        folder_count = len([f for f in files if os.path.isdir(f)])
+        
+        print(f"📁 文件拖放: {file_count} 个文件, {folder_count} 个文件夹 at ({x:.0f}, {y:.0f})")
+        for file_path in files:
+            icon = "📂" if os.path.isdir(file_path) else "📄"
+            print(f"   {icon} {file_path}")
+        
         # 发送文件信息到前端
         file_info = {
-            "path": file_path,
-            "name": os.path.basename(file_path),
-            "mime": mime_type,
+            "files": [
+                {
+                    "path": f, 
+                    "name": os.path.basename(f),
+                    "isDir": os.path.isdir(f)
+                } 
+                for f in files
+            ],
             "x": x,
             "y": y
         }

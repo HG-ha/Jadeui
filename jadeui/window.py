@@ -64,6 +64,9 @@ class Window(EventEmitter):
         - 'move': Fired when window is moved
         - 'page-loaded': Fired when page finishes loading
         - 'file-drop': Fired when files are dropped on window
+                       Args: (files: List[str], x: float, y: float)
+                       Note: 使用此事件会接管 WebView 的拖拽事件处理，
+                             导致前端无法收到原生拖拽事件。
     """
 
     # Class-level window registry
@@ -154,6 +157,64 @@ class Window(EventEmitter):
 
         # Callback references to prevent garbage collection
         self._callbacks: list = []
+        
+        # file-drop 事件是否已注册
+        self._file_drop_registered = False
+
+    def on(
+        self, event: str, callback: Optional[Callable[..., Any]] = None
+    ) -> Callable[..., Any]:
+        """Register an event listener
+        
+        Special handling for 'file-drop' event which requires DLL registration.
+
+        Args:
+            event: Event name to listen for
+            callback: Function to call when event is emitted
+
+        Returns:
+            The callback function (for decorator usage)
+        """
+        if event == "file-drop":
+            # file-drop 需要通过 jade_on 注册到 DLL
+            if callback is None:
+                # Used as decorator
+                def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+                    self._register_file_drop_handler(fn)
+                    return fn
+                return decorator
+            else:
+                self._register_file_drop_handler(callback)
+                return callback
+        else:
+            # 其他事件使用父类的 on 方法
+            return super().on(event, callback)
+
+    def _register_file_drop_handler(self, callback: Callable[..., Any]) -> None:
+        """注册 file-drop 事件处理器到 DLL"""
+        # 添加到本地监听器
+        self._listeners["file-drop"].append(callback)
+        
+        # 只注册一次到 DLL
+        if self._file_drop_registered:
+            return
+        
+        # 创建 ctypes 回调
+        @FileDropCallback
+        def file_drop_callback(window_id: int, json_data: bytes) -> None:
+            self._on_file_drop(window_id, json_data)
+        
+        # 保存引用防止垃圾回收
+        self._callbacks.append(file_drop_callback)
+        
+        # 通过 jade_on 注册到 DLL
+        self.dll_manager.jade_on(
+            b"file-drop",
+            ctypes.cast(file_drop_callback, ctypes.c_void_p),
+        )
+        
+        self._file_drop_registered = True
+        logger.info("file-drop event handler registered with DLL")
 
     # ==================== Window Lifecycle ====================
 
@@ -648,21 +709,21 @@ class Window(EventEmitter):
         def page_load_callback(window_id, url, status):
             self._on_page_load(window_id, url, status)
 
-        @FileDropCallback
-        def file_drop_callback(window_id, file_path, mime_type, x, y):
-            self._on_file_drop(window_id, file_path, mime_type, x, y)
+        # 注意: file-drop 事件需要通过 jade_on 注册，不再通过 set_window_event_handlers
+        # FileDropCallback 现在是 (window_id, json_data) 格式
 
         # Store references to prevent garbage collection
         self._callbacks.extend(
-            [window_event_callback, page_load_callback, file_drop_callback]
+            [window_event_callback, page_load_callback]
         )
 
         # Register with DLL (use 0 for global event handlers)
+        # 注意: file_drop_callback 传 None，因为需要通过 jade_on 单独注册
         self.dll_manager.set_window_event_handlers(
             0,
             ctypes.cast(window_event_callback, ctypes.c_void_p),
             ctypes.cast(page_load_callback, ctypes.c_void_p),
-            ctypes.cast(file_drop_callback, ctypes.c_void_p),
+            None,  # file-drop 通过 jade_on 注册
         )
 
     def _on_window_event(
@@ -700,16 +761,32 @@ class Window(EventEmitter):
         self.emit("page-loaded", url_str, status_str)
 
     def _on_file_drop(
-        self, window_id: int, file_path: bytes, mime_type: bytes, x: float, y: float
+        self, window_id: int, json_data: bytes
     ) -> None:
-        """Handle file drop events"""
-        file_path_str = file_path.decode("utf-8") if file_path else ""
-        mime_type_str = mime_type.decode("utf-8") if mime_type else ""
-
-        logger.debug(
-            f"File drop: {window_id}, {file_path_str}, {mime_type_str}, {x}, {y}"
-        )
-        self.emit("file-drop", file_path_str, mime_type_str, x, y)
+        """Handle file drop events
+        
+        Args:
+            window_id: The window ID
+            json_data: JSON data containing files array and position
+                      Format: {"files": ["path1", "path2"], "x": x, "y": y}
+        """
+        import json as json_module
+        
+        try:
+            data_str = json_data.decode("utf-8") if json_data else "{}"
+            data = json_module.loads(data_str)
+            
+            files = data.get("files", [])
+            x = data.get("x", 0)
+            y = data.get("y", 0)
+            
+            logger.debug(
+                f"File drop: window={window_id}, files={files}, x={x}, y={y}"
+            )
+            self.emit("file-drop", files, x, y)
+        except Exception as e:
+            logger.error(f"Error parsing file drop data: {e}")
+            self.emit("file-drop", [], 0, 0)
 
     # ==================== Static Methods ====================
 

@@ -15,13 +15,12 @@ WindowEventCallback = ctypes.CFUNCTYPE(
 PageLoadCallback = ctypes.CFUNCTYPE(
     None, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_char_p
 )
+# file-drop 事件回调：window_id, json_data
+# json_data 格式: {"files": ["文件路径1", "文件路径2"], "x": 位置X, "y": 位置Y}
 FileDropCallback = ctypes.CFUNCTYPE(
     None,
     ctypes.c_uint32,
     ctypes.c_char_p,
-    ctypes.c_char_p,
-    ctypes.c_double,
-    ctypes.c_double,
 )
 AppReadyCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
 IpcCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32, ctypes.c_char_p)
