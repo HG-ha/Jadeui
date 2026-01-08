@@ -6,10 +6,8 @@
 #   - 手动触发
 #
 # 发布流程:
-#   1. 从 JadeViewDocs/library releases 下载 DLL
-#   2. 构建 wheel 包 (x64, x86)
-#   3. 构建源码包
-#   4. 发布到 PyPI
+#   1. 调用 build_wheels.py 下载 DLL 并构建
+#   2. 发布到 PyPI
 
 name: Publish to PyPI
 
@@ -19,10 +17,6 @@ on:
       - 'v*'
   workflow_dispatch:
     inputs:
-      dll_version:
-        description: 'DLL 版本 (留空使用与包相同版本)'
-        required: false
-        default: ''
       publish_to:
         description: '发布目标'
         required: true
@@ -35,7 +29,6 @@ on:
 
 env:
   PYTHON_VERSION: '3.12'
-  DLL_REPO: 'JadeViewDocs/library'
 
 jobs:
   build:
@@ -56,173 +49,8 @@ jobs:
           python -m pip install --upgrade pip
           pip install build wheel
 
-      - name: Get package version
-        id: version
-        shell: pwsh
-        run: |
-          $content = Get-Content pyproject.toml -Raw
-          if ($content -match 'version\s*=\s*"([^"]+)"') {
-            $version = $Matches[1]
-            echo "VERSION=$version" >> $env:GITHUB_OUTPUT
-            echo "Package version: $version"
-          } else {
-            echo "::error::Could not find version in pyproject.toml"
-            exit 1
-          }
-
-      - name: Determine DLL version
-        id: dll_version
-        shell: pwsh
-        run: |
-          $dll_version = "${{ github.event.inputs.dll_version }}"
-          if ([string]::IsNullOrEmpty($dll_version)) {
-            $dll_version = "${{ steps.version.outputs.VERSION }}"
-          }
-          echo "DLL_VERSION=$dll_version" >> $env:GITHUB_OUTPUT
-          echo "DLL version: $dll_version"
-
-      - name: Download x64 DLL
-        shell: pwsh
-        run: |
-          $version = "${{ steps.dll_version.outputs.DLL_VERSION }}"
-          $url = "https://github.com/${{ env.DLL_REPO }}/releases/download/v${version}/JadeView-dist_x64.zip"
-          
-          echo "Downloading x64 DLL from: $url"
-          
-          try {
-            Invoke-WebRequest -Uri $url -OutFile "JadeView-dist_x64.zip" -UseBasicParsing
-            
-            # 解压到临时目录查看结构
-            Expand-Archive -Path "JadeView-dist_x64.zip" -DestinationPath "temp_extract" -Force
-            Remove-Item "JadeView-dist_x64.zip"
-            
-            echo "=== Extracted contents ==="
-            Get-ChildItem -Path "temp_extract" -Recurse | ForEach-Object { echo $_.FullName }
-            
-            # 查找 DLL 文件
-            $dll = Get-ChildItem -Path "temp_extract" -Recurse -Filter "JadeView_x64.dll" | Select-Object -First 1
-            
-            if ($dll) {
-              # 创建目标目录并复制所有文件
-              $sourceDir = $dll.Directory.FullName
-              New-Item -ItemType Directory -Path "JadeView-dist_x64" -Force | Out-Null
-              Copy-Item -Path "$sourceDir\*" -Destination "JadeView-dist_x64" -Recurse -Force
-              Remove-Item -Path "temp_extract" -Recurse -Force
-              
-              echo "✅ x64 DLL downloaded successfully"
-              dir "JadeView-dist_x64"
-            } else {
-              echo "::error::x64 DLL not found after extraction"
-              Get-ChildItem -Path "temp_extract" -Recurse
-              exit 1
-            }
-          } catch {
-            echo "::error::Failed to download x64 DLL: $_"
-            exit 1
-          }
-
-      - name: Download x86 DLL
-        shell: pwsh
-        continue-on-error: true
-        run: |
-          $version = "${{ steps.dll_version.outputs.DLL_VERSION }}"
-          $url = "https://github.com/${{ env.DLL_REPO }}/releases/download/v${version}/JadeView-dist_x86.zip"
-          
-          echo "Downloading x86 DLL from: $url"
-          
-          try {
-            Invoke-WebRequest -Uri $url -OutFile "JadeView-dist_x86.zip" -UseBasicParsing
-            
-            # 解压到临时目录
-            Expand-Archive -Path "JadeView-dist_x86.zip" -DestinationPath "temp_extract_x86" -Force
-            Remove-Item "JadeView-dist_x86.zip"
-            
-            # 查找 DLL 文件
-            $dll = Get-ChildItem -Path "temp_extract_x86" -Recurse -Filter "JadeView.dll" | Select-Object -First 1
-            
-            if ($dll) {
-              $sourceDir = $dll.Directory.FullName
-              New-Item -ItemType Directory -Path "JadeView-dist_x86" -Force | Out-Null
-              Copy-Item -Path "$sourceDir\*" -Destination "JadeView-dist_x86" -Recurse -Force
-              Remove-Item -Path "temp_extract_x86" -Recurse -Force
-              
-              echo "✅ x86 DLL downloaded successfully"
-              dir "JadeView-dist_x86"
-            } else {
-              echo "⚠️ x86 DLL not found, skipping x86 wheel"
-            }
-          } catch {
-            echo "⚠️ x86 DLL not available: $_"
-          }
-
-      - name: Build x64 wheel
-        shell: pwsh
-        run: |
-          echo "Building x64 wheel..."
-          
-          # 准备 DLL 目录
-          New-Item -ItemType Directory -Path "jadeui/dll" -Force | Out-Null
-          Copy-Item -Path "JadeView-dist_x64" -Destination "jadeui/dll/JadeView-dist_x64" -Recurse -Force
-          
-          # 构建 wheel
-          python -m build --wheel
-          
-          # 重命名为 win_amd64
-          Get-ChildItem dist/*.whl | ForEach-Object {
-            $newName = $_.Name -replace 'py3-none-any', 'py3-none-win_amd64'
-            if ($newName -ne $_.Name) {
-              Rename-Item $_.FullName -NewName $newName
-            }
-          }
-          
-          # 清理
-          Remove-Item -Path "jadeui/dll" -Recurse -Force
-          
-          echo "✅ x64 wheel built"
-          dir dist
-
-      - name: Check x86 DLL exists
-        id: check_x86
-        shell: pwsh
-        run: |
-          if (Test-Path "JadeView-dist_x86/JadeView.dll") {
-            echo "EXISTS=true" >> $env:GITHUB_OUTPUT
-          } else {
-            echo "EXISTS=false" >> $env:GITHUB_OUTPUT
-          }
-
-      - name: Build x86 wheel
-        shell: pwsh
-        if: steps.check_x86.outputs.EXISTS == 'true'
-        run: |
-          echo "Building x86 wheel..."
-          
-          # 准备 DLL 目录
-          New-Item -ItemType Directory -Path "jadeui/dll" -Force | Out-Null
-          Copy-Item -Path "JadeView-dist_x86" -Destination "jadeui/dll/JadeView-dist_x86" -Recurse -Force
-          
-          # 构建 wheel
-          python -m build --wheel
-          
-          # 重命名为 win32
-          Get-ChildItem dist/*.whl | Where-Object { $_.Name -notlike '*win_amd64*' } | ForEach-Object {
-            $newName = $_.Name -replace 'py3-none-any', 'py3-none-win32'
-            if ($newName -ne $_.Name) {
-              Rename-Item $_.FullName -NewName $newName
-            }
-          }
-          
-          # 清理
-          Remove-Item -Path "jadeui/dll" -Recurse -Force
-          
-          echo "✅ x86 wheel built"
-          dir dist
-
-      - name: Build source distribution
-        run: |
-          python -m build --sdist
-          echo "✅ Source distribution built"
-          dir dist
+      - name: Build wheels
+        run: python scripts/build_wheels.py
 
       - name: List build artifacts
         shell: pwsh
@@ -318,4 +146,3 @@ jobs:
           generate_release_notes: true
           draft: false
           prerelease: ${{ contains(github.ref, '-') }}
-

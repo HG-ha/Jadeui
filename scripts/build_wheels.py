@@ -7,25 +7,26 @@
 使用方法:
     python scripts/build_wheels.py
 
-构建前准备:
-    1. 下载对应架构的 DLL 压缩包:
-       - JadeView-dist_x64.zip (64位)
-       - JadeView-dist_x86.zip (32位)
-
-    2. 解压到项目根目录:
-       - JadeView-dist_x64/
-       - JadeView-dist_x86/
+构建流程:
+    1. 自动从 GitHub 下载对应版本的 DLL
+    2. 构建平台特定的 wheel 包
+    3. 构建源码包
 
 构建输出:
     dist/
-    ├── jadeui-0.1.0-py3-none-win_amd64.whl  (64位 Windows)
-    ├── jadeui-0.1.0-py3-none-win32.whl      (32位 Windows)
-    └── jadeui-0.1.0.tar.gz                   (源码包)
+    ├── jadeui-x.x.x-py3-none-win_amd64.whl  (64位 Windows)
+    ├── jadeui-x.x.x-py3-none-win32.whl      (32位 Windows)
+    └── jadeui-x.x.x.tar.gz                   (源码包)
 """
 
+import re
 import shutil
 import subprocess
 import sys
+import tempfile
+import urllib.error
+import urllib.request
+import zipfile
 from pathlib import Path
 
 # 项目根目录
@@ -33,6 +34,91 @@ ROOT_DIR = Path(__file__).parent.parent
 JADEUI_DIR = ROOT_DIR / "jadeui"
 DLL_DIR = JADEUI_DIR / "dll"
 DIST_DIR = ROOT_DIR / "dist"
+
+# GitHub 配置
+GITHUB_REPO = "JadeViewDocs/library"
+GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
+
+
+def get_dll_version() -> str:
+    """从 jadeui/downloader.py 读取 DLL_VERSION"""
+    downloader_path = JADEUI_DIR / "downloader.py"
+    content = downloader_path.read_text(encoding="utf-8")
+    match = re.search(r'DLL_VERSION\s*=\s*"([^"]+)"', content)
+    if match:
+        return match.group(1)
+    raise RuntimeError("无法从 jadeui/downloader.py 读取 DLL_VERSION")
+
+
+def download_dll(arch: str, version: str) -> bool:
+    """从 GitHub 下载 DLL
+
+    Args:
+        arch: 'x64' 或 'x86'
+        version: DLL 版本号
+
+    Returns:
+        成功返回 True
+    """
+    zip_name = f"JadeView-dist_{arch}.zip"
+    url = f"{GITHUB_RELEASE_URL}/v{version}/{zip_name}"
+    target_dir = ROOT_DIR / f"JadeView-dist_{arch}"
+
+    print(f"⬇️  下载 {arch} DLL (v{version})...")
+    print(f"   URL: {url}")
+
+    try:
+        # 下载到临时文件
+        with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
+            tmp_path = Path(tmp_file.name)
+
+            request = urllib.request.Request(
+                url, headers={"User-Agent": f"jadeui-build/{version}"}
+            )
+
+            with urllib.request.urlopen(request, timeout=60) as response:
+                total_size = int(response.headers.get("Content-Length", 0))
+                downloaded = 0
+                chunk_size = 8192
+
+                while True:
+                    chunk = response.read(chunk_size)
+                    if not chunk:
+                        break
+                    tmp_file.write(chunk)
+                    downloaded += len(chunk)
+
+                    if total_size > 0:
+                        percent = (downloaded / total_size) * 100
+                        bar = "█" * int(percent // 5) + "░" * (20 - int(percent // 5))
+                        print(f"\r   [{bar}] {percent:.1f}%", end="", flush=True)
+
+                print()  # 换行
+
+        # 解压
+        print(f"📂 解压到 {target_dir}...")
+        if target_dir.exists():
+            shutil.rmtree(target_dir)
+
+        with zipfile.ZipFile(tmp_path, "r") as zip_ref:
+            zip_ref.extractall(ROOT_DIR)
+
+        # 清理临时文件
+        tmp_path.unlink()
+
+        print(f"✅ {arch} DLL 下载完成")
+        return True
+
+    except urllib.error.HTTPError as e:
+        print(f"\n❌ 下载失败: HTTP {e.code} - {e.reason}")
+        return False
+    except urllib.error.URLError as e:
+        print(f"\n❌ 网络错误: {e.reason}")
+        return False
+    except Exception as e:
+        print(f"\n❌ 下载失败: {e}")
+        return False
+
 
 # 架构配置
 ARCH_CONFIG = {
@@ -204,19 +290,35 @@ def main():
     print("JadeUI Wheel 构建工具")
     print("=" * 50)
 
-    # 检查 DLL 目录
+    # 获取 DLL 版本
+    try:
+        dll_version = get_dll_version()
+        print(f"\nDLL 版本: v{dll_version}")
+    except Exception as e:
+        print(f"\n❌ {e}")
+        return 1
+
+    # 检查或下载 DLL
     has_x64 = (ROOT_DIR / "JadeView-dist_x64").exists()
     has_x86 = (ROOT_DIR / "JadeView-dist_x86").exists()
 
+    if not has_x64:
+        print("\n未找到 x64 DLL，正在下载...")
+        has_x64 = download_dll("x64", dll_version)
+
+    if not has_x86:
+        print("\n未找到 x86 DLL，正在下载...")
+        has_x86 = download_dll("x86", dll_version)
+
     if not has_x64 and not has_x86:
-        print("\n❌ 未找到 DLL 文件!")
-        print("\n请先下载 DLL:")
-        print("  1. 访问 https://github.com/JadeViewDocs/library/releases")
+        print("\n❌ 无法获取 DLL 文件!")
+        print(f"\n请手动下载 DLL (v{dll_version}):")
+        print(f"  1. 访问 https://github.com/{GITHUB_REPO}/releases/tag/v{dll_version}")
         print("  2. 下载 JadeView-dist_x64.zip 和/或 JadeView-dist_x86.zip")
         print("  3. 解压到项目根目录")
         return 1
 
-    print("\n检测到的 DLL:")
+    print("\n可用的 DLL:")
     if has_x64:
         print("  ✅ x64 (JadeView-dist_x64)")
     else:
