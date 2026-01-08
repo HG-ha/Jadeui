@@ -1,7 +1,11 @@
-# JadeUI
+<p align="center">
+  <img src="assets/favicon.png" alt="JadeUI Logo" width="120">
+</p>
+
+<h1 align="center">JadeUI</h1>
 
 <p align="center">
-  <strong>Python SDK for JadeView - Create desktop applications with WebView</strong>
+  <strong>Python SDK for JadeView - 使用 Web 技术构建桌面应用</strong>
 </p>
 
 <p align="center">
