@@ -1,0 +1,100 @@
+# JadeUI CI 工作流
+# 代码检查和测试
+
+name: CI
+
+on:
+  push:
+    branches: [main, master, dev]
+    paths:
+      - 'jadeui/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+  pull_request:
+    branches: [main, master]
+    paths:
+      - 'jadeui/**'
+      - 'tests/**'
+      - 'pyproject.toml'
+
+jobs:
+  lint:
+    name: Lint
+    runs-on: ubuntu-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install ruff mypy
+      
+      - name: Run ruff
+        run: ruff check jadeui/
+      
+      - name: Run ruff format check
+        run: ruff format --check jadeui/
+
+  test:
+    name: Test
+    runs-on: windows-latest
+    strategy:
+      matrix:
+        python-version: ['3.10', '3.11', '3.12']
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+      
+      - name: Install package
+        run: |
+          python -m pip install --upgrade pip
+          pip install -e .
+      
+      - name: Test import
+        run: |
+          python -c "import jadeui; print(f'JadeUI version: {jadeui.__version__}')"
+          python -c "from jadeui import JadeUIApp, Window, IPCManager, LocalServer"
+          python -c "from jadeui import download_dll, find_dll, get_architecture; print(f'Architecture: {get_architecture()}')"
+
+  build-test:
+    name: Build Test
+    runs-on: windows-latest
+    
+    steps:
+      - uses: actions/checkout@v4
+      
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      
+      - name: Install build tools
+        run: |
+          python -m pip install --upgrade pip
+          pip install build
+      
+      - name: Build wheel (without DLL)
+        run: python -m build --wheel
+      
+      - name: Build sdist
+        run: python -m build --sdist
+      
+      - name: List artifacts
+        shell: pwsh
+        run: |
+          Get-ChildItem dist | ForEach-Object {
+            $size = [math]::Round($_.Length / 1KB, 2)
+            echo "$($_.Name) - $size KB"
+          }
+

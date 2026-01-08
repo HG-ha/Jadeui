@@ -1,0 +1,50 @@
+<div id="user-detail">
+    <p class="loading">加载中...</p>
+</div>
+
+<script>
+    const userId = router.params.id;
+
+    // 监听响应
+    jade.ipcMain('get_user:response', function(result) {
+        const user = JSON.parse(result);
+        const container = document.getElementById('user-detail');
+
+        if (user.error) {
+            container.innerHTML = `<div class="card"><p>${user.error}</p></div>`;
+            return;
+        }
+
+        container.innerHTML = `
+            <div class="card" style="margin-bottom: 20px;">
+                <div style="display: flex; align-items: center; gap: 16px; margin-bottom: 16px;">
+                    <div style="width: 48px; height: 48px; border-radius: 50%; background: var(--accent); display: flex; align-items: center; justify-content: center; color: white; font-size: 18px; font-weight: 600;">
+                        ${user.name.charAt(0)}
+                    </div>
+                    <div>
+                        <h2 style="margin: 0 0 4px 0; font-size: 18px;">${user.name}</h2>
+                        <p style="margin: 0; font-size: 12px;">${user.role}</p>
+                    </div>
+                </div>
+                <div style="border-top: 1px solid var(--border); padding-top: 16px;">
+                    <div style="display: flex; margin-bottom: 12px;">
+                        <span style="width: 80px; color: var(--text-muted); font-size: 13px;">ID</span>
+                        <span style="font-size: 13px;">${user.id}</span>
+                    </div>
+                    <div style="display: flex; margin-bottom: 12px;">
+                        <span style="width: 80px; color: var(--text-muted); font-size: 13px;">邮箱</span>
+                        <span style="font-size: 13px;">${user.email}</span>
+                    </div>
+                    <div style="display: flex;">
+                        <span style="width: 80px; color: var(--text-muted); font-size: 13px;">角色</span>
+                        <span style="font-size: 13px;">${user.role}</span>
+                    </div>
+                </div>
+            </div>
+            <button class="btn btn-secondary" onclick="router.go('/users')">← 返回列表</button>
+        `;
+    });
+
+    // 发送请求
+    jade.ipcSend('get_user', userId);
+</script>

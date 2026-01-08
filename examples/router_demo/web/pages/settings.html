@@ -1,0 +1,43 @@
+<p style="color: var(--text-secondary); margin-bottom: 20px;">配置应用程序选项。</p>
+
+<div class="card">
+    <h3>外观</h3>
+    <div style="margin-top: 12px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">主题模式</label>
+        <select id="theme-select" onchange="handleThemeChange(this.value)" style="width: 200px;">
+            <option value="system">跟随系统</option>
+            <option value="light">浅色模式</option>
+            <option value="dark">深色模式</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <h3>语言</h3>
+    <div style="margin-top: 12px;">
+        <label style="display: block; margin-bottom: 8px; color: var(--text-secondary); font-size: 13px;">界面语言</label>
+        <select style="width: 200px;">
+            <option>简体中文</option>
+            <option>English</option>
+            <option>日本語</option>
+        </select>
+    </div>
+</div>
+
+<div class="card">
+    <h3>通知</h3>
+    <div style="margin-top: 12px; display: flex; align-items: center; gap: 10px;">
+        <input type="checkbox" id="notify" checked>
+        <label for="notify" style="color: var(--text-secondary); font-size: 13px;">启用桌面通知</label>
+    </div>
+</div>
+
+<script>
+    function handleThemeChange(theme) {
+        setTheme(theme);
+    }
+
+    // 同步当前主题到下拉框
+    const currentTheme = document.documentElement.getAttribute('data-theme') || 'system';
+    document.getElementById('theme-select').value = currentTheme;
+</script>

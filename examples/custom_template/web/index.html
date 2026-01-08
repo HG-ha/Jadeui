@@ -1,0 +1,125 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="dark">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Custom Template</title>
+    <!-- 图标 -->
+    <link rel="icon" href="favicon.png">
+    <!-- 可以使用内置样式作为基础 -->
+    <link rel="stylesheet" href="css/jadeui.css">
+    <!-- 你的自定义样式 -->
+    <link rel="stylesheet" href="css/custom.css">
+</head>
+<body>
+    <!-- 完全自定义的布局：顶部导航栏 -->
+    <header class="header">
+        <div class="logo">🌿 My App</div>
+        <nav class="nav">
+            <a href="#" onclick="router.go('/'); return false;">首页</a>
+            <a href="#" onclick="router.go('/products'); return false;">产品</a>
+            <a href="#" onclick="router.go('/contact'); return false;">联系我们</a>
+        </nav>
+        <div class="header-controls">
+            <button id="theme-btn" onclick="toggleTheme()">🌙</button>
+            <button onclick="windowAction('minimize')">─</button>
+            <button onclick="windowAction('maximize')">□</button>
+            <button onclick="windowAction('close')" class="close">✕</button>
+        </div>
+    </header>
+
+    <!-- 页面内容区域 -->
+    <main class="main">
+        <div id="page-content">
+            <p style="text-align: center; padding: 40px; color: var(--text-muted);">加载中...</p>
+        </div>
+    </main>
+
+    <!-- 底部 -->
+    <footer class="footer">
+        <span id="page-title">首页</span>
+        <span>© 2024 My App</span>
+    </footer>
+
+    <script>
+        // ========== 路由器 ==========
+        const router = {
+            go: function(path) {
+                jade.ipcSend('router:navigate', path);
+            },
+            params: {},
+        };
+
+        // ========== 窗口控制 ==========
+        function windowAction(action) {
+            jade.ipcSend('windowAction', action);
+        }
+
+        // ========== 主题切换 ==========
+        function toggleTheme() {
+            const html = document.documentElement;
+            const current = html.getAttribute('data-theme');
+            const next = current === 'dark' ? 'light' : 'dark';
+            html.setAttribute('data-theme', next);
+            updateThemeIcon(next);
+            jade.ipcSend('router:setTheme', next);
+        }
+
+        function updateThemeIcon(theme) {
+            const btn = document.getElementById('theme-btn');
+            btn.textContent = theme === 'dark' ? '🌙' : '☀️';
+        }
+
+        // ========== 更新导航高亮 ==========
+        function updateNav(path) {
+            document.querySelectorAll('.nav a').forEach(a => {
+                a.classList.remove('active');
+            });
+            const activeLink = document.querySelector(`.nav a[onclick*="'${path}'"]`);
+            if (activeLink) activeLink.classList.add('active');
+        }
+
+        // ========== 监听路由更新 ==========
+        jade.ipcMain('router:update', async function(data) {
+            try {
+                const navData = JSON.parse(data);
+                router.params = navData.params || {};
+
+                // 更新标题
+                document.getElementById('page-title').textContent = navData.title;
+                document.title = navData.title;
+
+                // 更新导航高亮
+                updateNav(navData.path);
+
+                // 加载页面内容
+                const response = await fetch(navData.template + '?t=' + Date.now());
+                const html = await response.text();
+                
+                const container = document.getElementById('page-content');
+                container.innerHTML = html;
+
+                // 执行页面脚本
+                container.querySelectorAll('script').forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    script.parentNode.replaceChild(newScript, script);
+                });
+
+            } catch (e) {
+                console.error('导航失败:', e);
+            }
+        });
+
+        // ========== 监听主题变化 ==========
+        jade.ipcMain('router:themeChanged', function(theme) {
+            document.documentElement.setAttribute('data-theme', theme.toLowerCase());
+            updateThemeIcon(theme.toLowerCase());
+        });
+
+        // ========== 通知后端准备好了 ==========
+        jade.ipcSend('router:ready', '');
+    </script>
+</body>
+</html>
+

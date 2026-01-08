@@ -1,0 +1,30 @@
+<p id="server-time" style="color: var(--text-muted); margin-bottom: 20px;">加载中...</p>
+
+<div style="display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px;">
+    <div class="card" style="text-align: center; padding: 24px;">
+        <h2 id="stat-visits" style="color: var(--accent); font-size: 36px; margin-bottom: 8px;">--</h2>
+        <p style="margin: 0;">今日访问</p>
+    </div>
+    <div class="card" style="text-align: center; padding: 24px;">
+        <h2 id="stat-online" style="color: #10b981; font-size: 36px; margin-bottom: 8px;">--</h2>
+        <p style="margin: 0;">在线用户</p>
+    </div>
+    <div class="card" style="text-align: center; padding: 24px;">
+        <h2 id="stat-total" style="color: #f59e0b; font-size: 36px; margin-bottom: 8px;">--</h2>
+        <p style="margin: 0;">总用户数</p>
+    </div>
+</div>
+
+<script>
+    // 监听响应
+    jade.ipcMain('get_stats:response', function(result) {
+        const stats = JSON.parse(result);
+        document.getElementById('server-time').textContent = '服务器时间: ' + stats.server_time;
+        document.getElementById('stat-visits').textContent = stats.today_visits.toLocaleString();
+        document.getElementById('stat-online').textContent = stats.online_users;
+        document.getElementById('stat-total').textContent = stats.total_users;
+    });
+
+    // 发送请求
+    jade.ipcSend('get_stats', '');
+</script>

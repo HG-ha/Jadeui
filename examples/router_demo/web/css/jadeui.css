@@ -1,0 +1,390 @@
+/* JadeUI Default Theme */
+
+* { margin: 0; padding: 0; box-sizing: border-box; }
+
+:root {
+    --sidebar-width: 220px;
+    --titlebar-height: 40px;
+}
+
+/* ===== 浅色主题 ===== */
+[data-theme="light"] {
+    --bg-solid: #f3f3f3;
+    --bg-primary: rgba(255, 255, 255, 0.7);
+    --bg-secondary: rgba(249, 249, 249, 0.85);
+    --bg-tertiary: rgba(255, 255, 255, 0.6);
+    --bg-hover: rgba(0, 0, 0, 0.04);
+    --bg-active: rgba(0, 0, 0, 0.06);
+    --text-primary: #1a1a1a;
+    --text-secondary: #5c5c5c;
+    --text-muted: #8c8c8c;
+    --accent: #0067c0;
+    --accent-hover: #005a9e;
+    --border: rgba(0, 0, 0, 0.08);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    --card-bg: rgba(255, 255, 255, 0.5);
+}
+
+/* ===== 深色主题 ===== */
+[data-theme="dark"] {
+    --bg-solid: #202020;
+    --bg-primary: rgba(32, 32, 32, 0.8);
+    --bg-secondary: rgba(44, 44, 44, 0.85);
+    --bg-tertiary: rgba(39, 39, 39, 0.9);
+    --bg-hover: rgba(255, 255, 255, 0.06);
+    --bg-active: rgba(255, 255, 255, 0.08);
+    --text-primary: #ffffff;
+    --text-secondary: #c0c0c0;
+    --text-muted: #888888;
+    --accent: #60cdff;
+    --accent-hover: #7dd4ff;
+    --border: rgba(255, 255, 255, 0.08);
+    --shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+    --card-bg: rgba(255, 255, 255, 0.04);
+}
+
+/* 跟随系统主题 */
+@media (prefers-color-scheme: light) {
+    [data-theme="system"] {
+        --bg-solid: #f3f3f3;
+        --bg-primary: rgba(255, 255, 255, 0.7);
+        --bg-secondary: rgba(249, 249, 249, 0.85);
+        --bg-tertiary: rgba(255, 255, 255, 0.6);
+        --bg-hover: rgba(0, 0, 0, 0.04);
+        --bg-active: rgba(0, 0, 0, 0.06);
+        --text-primary: #1a1a1a;
+        --text-secondary: #5c5c5c;
+        --text-muted: #8c8c8c;
+        --accent: #0067c0;
+        --accent-hover: #005a9e;
+        --border: rgba(0, 0, 0, 0.08);
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+        --card-bg: rgba(255, 255, 255, 0.5);
+    }
+}
+@media (prefers-color-scheme: dark) {
+    [data-theme="system"] {
+        --bg-solid: #202020;
+        --bg-primary: rgba(32, 32, 32, 0.8);
+        --bg-secondary: rgba(44, 44, 44, 0.85);
+        --bg-tertiary: rgba(39, 39, 39, 0.9);
+        --bg-hover: rgba(255, 255, 255, 0.06);
+        --bg-active: rgba(255, 255, 255, 0.08);
+        --text-primary: #ffffff;
+        --text-secondary: #c0c0c0;
+        --text-muted: #888888;
+        --accent: #60cdff;
+        --accent-hover: #7dd4ff;
+        --border: rgba(255, 255, 255, 0.08);
+        --shadow: 0 2px 8px rgba(0, 0, 0, 0.24);
+        --card-bg: rgba(255, 255, 255, 0.04);
+    }
+}
+
+html, body {
+    height: 100%;
+    overflow: hidden;
+}
+
+body {
+    font-family: 'Segoe UI Variable', 'Segoe UI', system-ui, -apple-system, sans-serif;
+    background: transparent;
+    color: var(--text-primary);
+    display: flex;
+    flex-direction: column;
+}
+
+/* ===== 标题栏 ===== */
+.titlebar {
+    height: var(--titlebar-height);
+    display: flex;
+    align-items: center;
+    padding: 0 12px;
+    background: var(--bg-primary);
+    -webkit-app-region: drag;
+    flex-shrink: 0;
+    border-bottom: 1px solid var(--border);
+}
+
+.titlebar-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
+.titlebar-title {
+    font-size: 12px;
+    font-weight: 400;
+    color: var(--text-secondary);
+    flex: 1;
+}
+
+.titlebar-controls {
+    display: flex;
+    -webkit-app-region: no-drag;
+    margin-right: -12px;
+}
+
+.titlebar-btn {
+    width: 46px;
+    height: var(--titlebar-height);
+    border: none;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    font-size: 10px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: background 0.1s;
+}
+
+.titlebar-btn:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.titlebar-btn.close:hover {
+    background: #c42b1c;
+    color: white;
+}
+
+/* ===== 主体布局 ===== */
+.app-container {
+    flex: 1;
+    display: flex;
+    overflow: hidden;
+}
+
+/* ===== 侧边栏 ===== */
+.sidebar {
+    width: var(--sidebar-width);
+    background: var(--bg-secondary);
+    display: flex;
+    flex-direction: column;
+    flex-shrink: 0;
+    border-right: 1px solid var(--border);
+}
+
+.sidebar-header {
+    padding: 16px 16px 12px;
+}
+
+.sidebar-header h1 {
+    font-size: 14px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.sidebar-nav {
+    flex: 1;
+    padding: 4px 8px;
+    overflow-y: auto;
+}
+
+.nav-item {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 10px 12px;
+    border-radius: 6px;
+    cursor: pointer;
+    transition: background 0.1s;
+    color: var(--text-secondary);
+    margin-bottom: 2px;
+    font-size: 13px;
+}
+
+.nav-item:hover {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.nav-item.active {
+    background: var(--bg-active);
+    color: var(--text-primary);
+    font-weight: 500;
+}
+
+.nav-icon {
+    font-size: 15px;
+    width: 20px;
+    text-align: center;
+}
+
+/* 侧边栏底部 */
+.sidebar-footer {
+    padding: 12px;
+    border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.backdrop-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backdrop-switcher label {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.backdrop-switcher select {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 11px;
+}
+
+.theme-switcher {
+    display: flex;
+    gap: 4px;
+    background: var(--bg-hover);
+    border-radius: 6px;
+    padding: 3px;
+}
+
+.theme-btn {
+    flex: 1;
+    padding: 6px 8px;
+    border: none;
+    border-radius: 4px;
+    background: transparent;
+    color: var(--text-muted);
+    cursor: pointer;
+    font-size: 11px;
+    transition: all 0.15s;
+}
+
+.theme-btn:hover {
+    color: var(--text-secondary);
+}
+
+.theme-btn.active {
+    background: var(--bg-primary);
+    color: var(--text-primary);
+    box-shadow: var(--shadow);
+}
+
+/* ===== 内容区 ===== */
+.main-content {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: var(--bg-tertiary);
+}
+
+.content-header {
+    padding: 20px 28px 16px;
+}
+
+.content-header h2 {
+    font-size: 22px;
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.content-body {
+    flex: 1;
+    padding: 0 28px 28px;
+    overflow-y: auto;
+}
+
+.page-container {
+    animation: fadeIn 0.15s ease-out;
+}
+
+@keyframes fadeIn {
+    from { opacity: 0; transform: translateY(4px); }
+    to { opacity: 1; transform: translateY(0); }
+}
+
+/* ===== 通用组件 ===== */
+.card {
+    background: var(--card-bg);
+    border-radius: 8px;
+    padding: 16px 20px;
+    margin-bottom: 12px;
+    border: 1px solid var(--border);
+}
+
+.card h3 {
+    font-size: 14px;
+    font-weight: 600;
+    margin-bottom: 8px;
+}
+
+.btn {
+    padding: 8px 16px;
+    border: none;
+    border-radius: 6px;
+    cursor: pointer;
+    font-size: 13px;
+    font-weight: 500;
+    background: var(--accent);
+    color: white;
+    transition: background 0.1s;
+}
+
+.btn:hover {
+    background: var(--accent-hover);
+}
+
+.btn-secondary {
+    background: var(--bg-hover);
+    color: var(--text-primary);
+}
+
+.btn-secondary:hover {
+    background: var(--bg-active);
+}
+
+h1 { font-size: 24px; font-weight: 600; margin-bottom: 8px; }
+h2 { font-size: 18px; font-weight: 600; margin-bottom: 8px; }
+h3 { font-size: 14px; font-weight: 600; margin-bottom: 6px; }
+
+p {
+    color: var(--text-secondary);
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+a { color: var(--accent); text-decoration: none; }
+a:hover { text-decoration: underline; }
+
+ul, ol { color: var(--text-secondary); font-size: 13px; }
+
+.loading {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 120px;
+    color: var(--text-muted);
+    font-size: 13px;
+}
+
+select, input[type="text"], input[type="email"] {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: var(--bg-hover);
+    color: var(--text-primary);
+    border: 1px solid var(--border);
+    font-size: 13px;
+    outline: none;
+}
+
+select:focus, input:focus {
+    border-color: var(--accent);
+}
+
+input[type="checkbox"] {
+    width: 18px;
+    height: 18px;
+    accent-color: var(--accent);
+}
+

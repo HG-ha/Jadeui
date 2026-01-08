@@ -1,0 +1,15 @@
+# Include package data
+recursive-include jadeui *.py
+
+# Include documentation
+include README.md
+include LICENSE
+
+# Exclude build artifacts
+global-exclude __pycache__
+global-exclude *.pyc
+global-exclude *.pyo
+global-exclude .git*
+
+# Note: DLL files are handled by wheel build, not sdist
+# Users installing from sdist will auto-download DLL on first run

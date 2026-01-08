@@ -1,0 +1,168 @@
+"""
+JadeUI Type Definitions
+
+ctypes structures and callback type definitions for JadeView DLL interface.
+"""
+
+import ctypes
+from typing import Optional, Callable, Any
+
+
+# Callback function types
+WindowEventCallback = ctypes.CFUNCTYPE(
+    ctypes.c_int, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_char_p
+)
+PageLoadCallback = ctypes.CFUNCTYPE(
+    None, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_char_p
+)
+FileDropCallback = ctypes.CFUNCTYPE(
+    None,
+    ctypes.c_uint32,
+    ctypes.c_char_p,
+    ctypes.c_char_p,
+    ctypes.c_double,
+    ctypes.c_double,
+)
+AppReadyCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
+IpcCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32, ctypes.c_char_p)
+WindowAllClosedCallback = ctypes.CFUNCTYPE(ctypes.c_int)
+
+
+# Data structures
+class RGBA(ctypes.Structure):
+    """RGBA color structure"""
+
+    _fields_ = [
+        ("r", ctypes.c_int),
+        ("g", ctypes.c_int),
+        ("b", ctypes.c_int),
+        ("a", ctypes.c_int),
+    ]
+
+    def __init__(self, r: int = 255, g: int = 255, b: int = 255, a: int = 255):
+        super().__init__(r, g, b, a)
+
+    def __repr__(self) -> str:
+        return f"RGBA(r={self.r}, g={self.g}, b={self.b}, a={self.a})"
+
+
+class WebViewWindowOptions(ctypes.Structure):
+    """WebView window configuration options"""
+
+    _fields_ = [
+        ("title", ctypes.c_char_p),
+        ("width", ctypes.c_int),
+        ("height", ctypes.c_int),
+        ("resizable", ctypes.c_int),
+        ("remove_titlebar", ctypes.c_int),
+        ("transparent", ctypes.c_int),
+        ("background_color", RGBA),
+        ("always_on_top", ctypes.c_int),
+        ("no_center", ctypes.c_int),
+        ("theme", ctypes.c_char_p),
+        ("maximized", ctypes.c_int),
+        ("maximizable", ctypes.c_int),
+        ("minimizable", ctypes.c_int),
+        ("x", ctypes.c_int),
+        ("y", ctypes.c_int),
+        ("min_width", ctypes.c_int),
+        ("min_height", ctypes.c_int),
+        ("max_width", ctypes.c_int),
+        ("max_height", ctypes.c_int),
+        ("fullscreen", ctypes.c_int),
+        ("focus", ctypes.c_int),
+        ("hide_window", ctypes.c_int),
+        ("use_page_icon", ctypes.c_int),
+    ]
+
+    def __init__(
+        self,
+        title: bytes = b"Window",
+        width: int = 800,
+        height: int = 600,
+        resizable: bool = True,
+        remove_titlebar: bool = False,
+        transparent: bool = False,
+        background_color: Optional[RGBA] = None,
+        always_on_top: bool = False,
+        no_center: bool = False,
+        theme: bytes = b"System",
+        maximized: bool = False,
+        maximizable: bool = True,
+        minimizable: bool = True,
+        x: int = -1,
+        y: int = -1,
+        min_width: int = 0,
+        min_height: int = 0,
+        max_width: int = 0,
+        max_height: int = 0,
+        fullscreen: bool = False,
+        focus: bool = True,
+        hide_window: bool = False,
+        use_page_icon: bool = True,
+    ):
+        if background_color is None:
+            background_color = RGBA(255, 255, 255, 255)
+
+        super().__init__(
+            title,
+            width,
+            height,
+            int(resizable),
+            int(remove_titlebar),
+            int(transparent),
+            background_color,
+            int(always_on_top),
+            int(no_center),
+            theme,
+            int(maximized),
+            int(maximizable),
+            int(minimizable),
+            x,
+            y,
+            min_width,
+            min_height,
+            max_width,
+            max_height,
+            int(fullscreen),
+            int(focus),
+            int(hide_window),
+            int(use_page_icon),
+        )
+
+
+class WebViewSettings(ctypes.Structure):
+    """WebView behavior settings"""
+
+    _fields_ = [
+        ("autoplay", ctypes.c_int),
+        ("background_throttling", ctypes.c_int),
+        ("disable_right_click", ctypes.c_int),
+        ("ua", ctypes.c_char_p),
+        ("preload_js", ctypes.c_char_p),
+    ]
+
+    def __init__(
+        self,
+        autoplay: bool = False,
+        background_throttling: bool = False,
+        disable_right_click: bool = False,
+        ua: Optional[bytes] = None,
+        preload_js: Optional[bytes] = None,
+    ):
+        super().__init__(
+            int(autoplay),
+            int(background_throttling),
+            int(disable_right_click),
+            ua,
+            preload_js,
+        )
+
+
+# Python callback types for user code
+WindowEventHandler = Callable[[int, str, str], int]
+PageLoadHandler = Callable[[int, str, str], None]
+FileDropHandler = Callable[[int, str, str, float, float], None]
+AppReadyHandler = Callable[[int, str], int]
+IPCHandler = Callable[[int, str], int]
+WindowAllClosedHandler = Callable[[], int]

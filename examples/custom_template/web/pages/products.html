@@ -1,0 +1,24 @@
+<h2>🛍️ 产品列表</h2>
+
+<div id="product-list" class="product-list">
+    <p style="color: var(--text-muted);">加载中...</p>
+</div>
+
+<script>
+    // 从后端获取产品数据
+    jade.ipcMain('get_products:response', function(result) {
+        const products = JSON.parse(result);
+        const container = document.getElementById('product-list');
+        
+        container.innerHTML = products.map(p => `
+            <div class="product-item">
+                <h3>${p.name}</h3>
+                <div class="price">¥${p.price}</div>
+                <button class="btn" style="margin-top: 12px;">购买</button>
+            </div>
+        `).join('');
+    });
+
+    jade.ipcSend('get_products', '');
+</script>
+

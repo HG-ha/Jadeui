@@ -1,0 +1,26 @@
+<p style="color: var(--text-secondary); margin-bottom: 16px;">管理系统中的所有用户。</p>
+
+<div id="user-list">
+    <p class="loading">加载中...</p>
+</div>
+
+<script>
+    // 监听响应
+    jade.ipcMain('get_users:response', function(result) {
+        const users = JSON.parse(result);
+        const container = document.getElementById('user-list');
+
+        container.innerHTML = users.map(user => `
+            <div class="card" style="display: flex; justify-content: space-between; align-items: center; padding: 14px 20px;">
+                <div>
+                    <h3 style="margin-bottom: 2px; font-size: 14px;">${user.name}</h3>
+                    <p style="font-size: 12px; margin: 0; color: var(--text-muted);">${user.role} · ${user.email}</p>
+                </div>
+                <button class="btn" onclick="router.go('/user/${user.id}')" style="padding: 6px 14px; font-size: 12px;">查看</button>
+            </div>
+        `).join('');
+    });
+
+    // 发送请求
+    jade.ipcSend('get_users', '');
+</script>

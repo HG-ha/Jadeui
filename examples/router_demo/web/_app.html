@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh-CN" data-theme="system">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JadeUI Demo</title>
+    <link rel="icon" href="favicon.png">
+    <!-- 第三方库 -->
+
+    <!-- 内置样式 -->
+    <link rel="stylesheet" href="css/jadeui.css">
+    <!-- 用户自定义样式 (自动检测 css/app.css, css/style.css 等) -->
+    
+    <style>:root { --sidebar-width: 200px; }</style>
+</head>
+<body>
+    <div class="titlebar">
+        <img src="favicon.png" class="titlebar-icon" alt=""><span class="titlebar-title">JadeUI Demo</span>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn" onclick="windowAction('minimize')">─</button>
+            <button class="titlebar-btn" onclick="windowAction('maximize')">□</button>
+            <button class="titlebar-btn close" onclick="windowAction('close')">✕</button>
+        </div>
+    </div>
+
+    <div class="app-container">
+        <div class="sidebar">
+            <div class="sidebar-header">
+                <h1>JadeUI Demo</h1>
+            </div>
+            <nav class="sidebar-nav">
+                
+                <div class="nav-item" data-path="/" onclick="router.go('/')">
+                    <span class="nav-icon">🏠</span>
+                    <span class="nav-text">首页</span>
+                </div>
+                <div class="nav-item" data-path="/dashboard" onclick="router.go('/dashboard')">
+                    <span class="nav-icon">📊</span>
+                    <span class="nav-text">仪表盘</span>
+                </div>
+                <div class="nav-item" data-path="/users" onclick="router.go('/users')">
+                    <span class="nav-icon">👥</span>
+                    <span class="nav-text">用户管理</span>
+                </div>
+                <div class="nav-item" data-path="/settings" onclick="router.go('/settings')">
+                    <span class="nav-icon">⚙️</span>
+                    <span class="nav-text">设置</span>
+                </div>
+                <div class="nav-item" data-path="/about" onclick="router.go('/about')">
+                    <span class="nav-icon">😄</span>
+                    <span class="nav-text">关于</span>
+                </div>
+            </nav>
+            <div class="sidebar-footer">
+                <div class="theme-switcher">
+                    <button class="theme-btn" data-theme="light" onclick="setTheme('light')">浅色</button>
+                    <button class="theme-btn" data-theme="dark" onclick="setTheme('dark')">深色</button>
+                    <button class="theme-btn active" data-theme="system" onclick="setTheme('system')">自动</button>
+                </div>
+            </div>
+        </div>
+
+        <div class="main-content">
+            <div class="content-header">
+                <h2 id="page-title">加载中...</h2>
+            </div>
+            <div class="content-body">
+                <div id="page-content" class="page-container">
+                    <div class="loading">正在加载...</div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        const routes = [{"path": "/", "template": "pages/home.html", "title": "\u9996\u9875"}, {"path": "/dashboard", "template": "pages/dashboard.html", "title": "\u4eea\u8868\u76d8"}, {"path": "/users", "template": "pages/users.html", "title": "\u7528\u6237\u7ba1\u7406"}, {"path": "/user/:id", "template": "pages/user.html", "title": "\u7528\u6237\u8be6\u60c5"}, {"path": "/settings", "template": "pages/settings.html", "title": "\u8bbe\u7f6e"}, {"path": "/about", "template": "pages/about.html", "title": "\u5173\u4e8e"}];
+        let currentPath = '';
+
+        const router = {
+            go: function(path) { jade.ipcSend('router:navigate', path); },
+            current: function() { return currentPath; },
+            params: {},
+        };
+
+        function windowAction(action) { jade.ipcSend('windowAction', action); }
+
+        function setTheme(theme) {
+            document.documentElement.setAttribute('data-theme', theme);
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme);
+            });
+            jade.ipcSend('router:setTheme', theme);
+        }
+
+        function setBackdrop(backdrop) {
+            jade.ipcSend('router:setBackdrop', backdrop);
+        }
+
+        function updateNavHighlight(path) {
+            document.querySelectorAll('.nav-item').forEach(item => {
+                const itemPath = item.dataset.path;
+                const isActive = itemPath === path ||
+                    (path.startsWith(itemPath + '/') && itemPath !== '/') ||
+                    (itemPath === '/' && path === '/');
+                item.classList.toggle('active', isActive);
+            });
+        }
+
+        async function loadTemplate(template, params) {
+            try {
+                const response = await fetch(template + '?t=' + Date.now());
+                if (!response.ok) throw new Error('Template not found');
+                let html = await response.text();
+                for (const [key, value] of Object.entries(params)) {
+                    html = html.replace(new RegExp('\\{\\{' + key + '\\}\\}', 'g'), value);
+                }
+                return html;
+            } catch (e) {
+                console.error('加载模板失败:', e);
+                return '<div class="card"><p>页面加载失败</p></div>';
+            }
+        }
+
+        jade.ipcMain('router:update', async function(data) {
+            try {
+                const navData = JSON.parse(data);
+                currentPath = navData.path;
+                router.params = navData.params || {};
+
+                document.getElementById('page-title').textContent = navData.title;
+                document.title = navData.title + ' - JadeUI Demo';
+                updateNavHighlight(navData.path);
+
+                const content = await loadTemplate(navData.template, navData.params);
+                const container = document.getElementById('page-content');
+                container.innerHTML = content;
+
+                // 重新触发动画
+                container.classList.remove('page-container');
+                void container.offsetWidth;
+                container.classList.add('page-container');
+
+                // 执行页面脚本
+                container.querySelectorAll('script').forEach(script => {
+                    const newScript = document.createElement('script');
+                    newScript.textContent = script.textContent;
+                    script.parentNode.replaceChild(newScript, script);
+                });
+            } catch (e) {
+                console.error('导航失败:', e);
+            }
+        });
+
+        jade.ipcMain('router:themeChanged', function(theme) {
+            document.documentElement.setAttribute('data-theme', theme.toLowerCase());
+            document.querySelectorAll('.theme-btn').forEach(btn => {
+                btn.classList.toggle('active', btn.dataset.theme === theme.toLowerCase());
+            });
+        });
+
+        // 通知后端前端已准备好
+        jade.ipcSend('router:ready', '');
+    </script>
+    <!-- 第三方脚本 -->
+
+    <!-- 用户自定义脚本 (自动检测 js/app.js, js/main.js 等) -->
+    
+</body>
+</html>

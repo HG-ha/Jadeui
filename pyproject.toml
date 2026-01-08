@@ -1,0 +1,76 @@
+[project]
+name = "jadeui"
+version = "0.1.0"
+description = "Python SDK for JadeView - Create desktop applications with WebView"
+readme = "README.md"
+license = {text = "MIT"}
+authors = [
+    {name = "JadeView Team"}
+]
+keywords = ["jadeui","gui", "webview", "desktop", "ui", "jadeview"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Intended Audience :: Developers",
+    "License :: OSI Approved :: MIT License",
+    "Operating System :: Microsoft :: Windows",
+    "Programming Language :: Python :: 3",
+    "Programming Language :: Python :: 3.10",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Software Development :: User Interfaces",
+    "Topic :: Desktop Environment",
+]
+requires-python = ">=3.10"
+dependencies = [
+    "imageio>=2.37.2",
+    "nuitka>=2.8.9",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=7.0",
+    "ruff>=0.1.0",
+    "mypy>=1.0",
+    "build>=1.0",
+]
+
+[project.scripts]
+jadeui-download = "jadeui.downloader:cli"
+
+[project.urls]
+Homepage = "https://jade.run"
+Documentation = "https://jade.run/python-sdk"
+Repository = "https://github.com/ArcletProject/jadeui"
+Issues = "https://github.com/ArcletProject/jadeui/issues"
+
+[build-system]
+requires = ["hatchling"]
+build-backend = "hatchling.build"
+
+[tool.hatch.build.targets.wheel]
+packages = ["jadeui"]
+# artifacts 用于包含非 Python 文件（如 DLL）
+# 这些文件如果存在会被包含，不存在也不会报错
+artifacts = [
+    "jadeui/dll/**/*",
+]
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "jadeui/**/*.py",
+    "README.md",
+    "LICENSE",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py310"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "W"]
+ignore = ["E501"]
+
+[tool.mypy]
+python_version = "3.10"
+warn_return_any = true
+warn_unused_ignores = true
