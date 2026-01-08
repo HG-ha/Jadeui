@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="assets/favicon.png" alt="JadeUI Logo" width="120">
+  <img src="assets/light.svg" alt="JadeUI Logo" width="120">
 </p>
 
 <h1 align="center">JadeUI</h1>
