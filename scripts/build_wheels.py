@@ -298,6 +298,9 @@ def main():
         print(f"\n[ERROR] {e}")
         return 1
 
+    # Clean first (before downloading DLLs)
+    clean()
+
     # Check or download DLL
     has_x64 = (ROOT_DIR / "JadeView-dist_x64").exists()
     has_x86 = (ROOT_DIR / "JadeView-dist_x86").exists()
@@ -328,9 +331,6 @@ def main():
         print("  [OK] x86 (JadeView-dist_x86)")
     else:
         print("  [--] x86 not found")
-
-    # Clean
-    clean()
 
     # Ensure dist directory exists
     DIST_DIR.mkdir(exist_ok=True)
