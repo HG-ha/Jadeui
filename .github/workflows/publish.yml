@@ -91,14 +91,29 @@ jobs:
           
           try {
             Invoke-WebRequest -Uri $url -OutFile "JadeView-dist_x64.zip" -UseBasicParsing
-            Expand-Archive -Path "JadeView-dist_x64.zip" -DestinationPath "." -Force
+            
+            # 解压到临时目录查看结构
+            Expand-Archive -Path "JadeView-dist_x64.zip" -DestinationPath "temp_extract" -Force
             Remove-Item "JadeView-dist_x64.zip"
             
-            if (Test-Path "JadeView-dist_x64/JadeView_x64.dll") {
+            echo "=== Extracted contents ==="
+            Get-ChildItem -Path "temp_extract" -Recurse | ForEach-Object { echo $_.FullName }
+            
+            # 查找 DLL 文件
+            $dll = Get-ChildItem -Path "temp_extract" -Recurse -Filter "JadeView_x64.dll" | Select-Object -First 1
+            
+            if ($dll) {
+              # 创建目标目录并复制所有文件
+              $sourceDir = $dll.Directory.FullName
+              New-Item -ItemType Directory -Path "JadeView-dist_x64" -Force | Out-Null
+              Copy-Item -Path "$sourceDir\*" -Destination "JadeView-dist_x64" -Recurse -Force
+              Remove-Item -Path "temp_extract" -Recurse -Force
+              
               echo "✅ x64 DLL downloaded successfully"
               dir "JadeView-dist_x64"
             } else {
               echo "::error::x64 DLL not found after extraction"
+              Get-ChildItem -Path "temp_extract" -Recurse
               exit 1
             }
           } catch {
@@ -117,10 +132,20 @@ jobs:
           
           try {
             Invoke-WebRequest -Uri $url -OutFile "JadeView-dist_x86.zip" -UseBasicParsing
-            Expand-Archive -Path "JadeView-dist_x86.zip" -DestinationPath "." -Force
+            
+            # 解压到临时目录
+            Expand-Archive -Path "JadeView-dist_x86.zip" -DestinationPath "temp_extract_x86" -Force
             Remove-Item "JadeView-dist_x86.zip"
             
-            if (Test-Path "JadeView-dist_x86/JadeView.dll") {
+            # 查找 DLL 文件
+            $dll = Get-ChildItem -Path "temp_extract_x86" -Recurse -Filter "JadeView.dll" | Select-Object -First 1
+            
+            if ($dll) {
+              $sourceDir = $dll.Directory.FullName
+              New-Item -ItemType Directory -Path "JadeView-dist_x86" -Force | Out-Null
+              Copy-Item -Path "$sourceDir\*" -Destination "JadeView-dist_x86" -Recurse -Force
+              Remove-Item -Path "temp_extract_x86" -Recurse -Force
+              
               echo "✅ x86 DLL downloaded successfully"
               dir "JadeView-dist_x86"
             } else {
