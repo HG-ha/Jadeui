@@ -38,9 +38,7 @@ class EventEmitter:
         self._listeners: Dict[str, List[Callable[..., Any]]] = defaultdict(list)
         self._once_listeners: set[Callable[..., Any]] = set()
 
-    def on(
-        self, event: str, callback: Optional[Callable[..., Any]] = None
-    ) -> Callable[..., Any]:
+    def on(self, event: str, callback: Optional[Callable[..., Any]] = None) -> Callable[..., Any]:
         """Register an event listener
 
         Can be used as a method or decorator:
@@ -124,9 +122,7 @@ class EventEmitter:
 
         return listeners_called
 
-    def once(
-        self, event: str, callback: Optional[Callable[..., Any]] = None
-    ) -> Callable[..., Any]:
+    def once(self, event: str, callback: Optional[Callable[..., Any]] = None) -> Callable[..., Any]:
         """Register a one-time event listener
 
         The listener will be removed after the first event emission.

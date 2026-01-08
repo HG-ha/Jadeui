@@ -39,6 +39,7 @@ TEMPLATES_DIR = os.path.join(os.path.dirname(__file__), "templates")
 @dataclass
 class PageConfig:
     """页面配置"""
+
     path: str
     template: str
     title: str = "Page"
@@ -130,13 +131,15 @@ class Router:
         show_in_nav: bool = True,
     ) -> "Router":
         """注册页面"""
-        self._pages.append(PageConfig(
-            path=path,
-            template=template,
-            title=title,
-            icon=icon,
-            show_in_nav=show_in_nav,
-        ))
+        self._pages.append(
+            PageConfig(
+                path=path,
+                template=template,
+                title=title,
+                icon=icon,
+                show_in_nav=show_in_nav,
+            )
+        )
         return self
 
     def set_theme(self, theme: str) -> None:
@@ -331,10 +334,9 @@ class Router:
                     <span class="nav-text">{page.title}</span>
                 </div>'''
 
-        routes_json = json.dumps([
-            {"path": p.path, "template": p.template, "title": p.title}
-            for p in self._pages
-        ])
+        routes_json = json.dumps(
+            [{"path": p.path, "template": p.template, "title": p.title} for p in self._pages]
+        )
 
         # 生成额外的 head 链接 (第三方库如 Bootstrap)
         extra_head_links = ""

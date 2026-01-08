@@ -17,4 +17,3 @@ def get_default_css() -> str:
     css_path = os.path.join(TEMPLATES_DIR, "default.css")
     with open(css_path, "r", encoding="utf-8") as f:
         return f.read()
-

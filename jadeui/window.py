@@ -39,9 +39,9 @@ class Backdrop:
     Note: Window must have transparent=True for backdrop effects to work.
     """
 
-    MICA = "mica"           # Mica 效果，Windows 11 默认背景材料
-    MICA_ALT = "micaAlt"    # Mica Alt 效果，Mica 的替代版本
-    ACRYLIC = "acrylic"     # Acrylic 效果，半透明模糊背景
+    MICA = "mica"  # Mica 效果，Windows 11 默认背景材料
+    MICA_ALT = "micaAlt"  # Mica Alt 效果，Mica 的替代版本
+    ACRYLIC = "acrylic"  # Acrylic 效果，半透明模糊背景
 
 
 class Window(EventEmitter):
@@ -161,9 +161,7 @@ class Window(EventEmitter):
         # file-drop 事件是否已注册
         self._file_drop_registered = False
 
-    def on(
-        self, event: str, callback: Optional[Callable[..., Any]] = None
-    ) -> Callable[..., Any]:
+    def on(self, event: str, callback: Optional[Callable[..., Any]] = None) -> Callable[..., Any]:
         """Register an event listener
 
         Special handling for 'file-drop' event which requires DLL registration.
@@ -182,6 +180,7 @@ class Window(EventEmitter):
                 def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
                     self._register_file_drop_handler(fn)
                     return fn
+
                 return decorator
             else:
                 self._register_file_drop_handler(callback)
@@ -491,9 +490,7 @@ class Window(EventEmitter):
         """
         if self.id is not None:
             buffer = ctypes.create_string_buffer(32)
-            result = self.dll_manager.get_window_theme(
-                self.id, buffer, ctypes.sizeof(buffer)
-            )
+            result = self.dll_manager.get_window_theme(self.id, buffer, ctypes.sizeof(buffer))
             if result == 1:
                 return buffer.value.decode("utf-8")
         return Theme.SYSTEM
@@ -713,9 +710,7 @@ class Window(EventEmitter):
         # FileDropCallback 现在是 (window_id, json_data) 格式
 
         # Store references to prevent garbage collection
-        self._callbacks.extend(
-            [window_event_callback, page_load_callback]
-        )
+        self._callbacks.extend([window_event_callback, page_load_callback])
 
         # Register with DLL (use 0 for global event handlers)
         # 注意: file_drop_callback 传 None，因为需要通过 jade_on 单独注册
@@ -726,9 +721,7 @@ class Window(EventEmitter):
             None,  # file-drop 通过 jade_on 注册
         )
 
-    def _on_window_event(
-        self, window_id: int, event_type: bytes, event_data: bytes
-    ) -> int:
+    def _on_window_event(self, window_id: int, event_type: bytes, event_data: bytes) -> int:
         """Handle window events"""
         event_type_str = event_type.decode("utf-8") if event_type else ""
         event_data_str = event_data.decode("utf-8") if event_data else ""
@@ -760,9 +753,7 @@ class Window(EventEmitter):
         logger.debug(f"Page load: {window_id}, {url_str}, {status_str}")
         self.emit("page-loaded", url_str, status_str)
 
-    def _on_file_drop(
-        self, window_id: int, json_data: bytes
-    ) -> None:
+    def _on_file_drop(self, window_id: int, json_data: bytes) -> None:
         """Handle file drop events
 
         Args:
@@ -780,9 +771,7 @@ class Window(EventEmitter):
             x = data.get("x", 0)
             y = data.get("y", 0)
 
-            logger.debug(
-                f"File drop: window={window_id}, files={files}, x={x}, y={y}"
-            )
+            logger.debug(f"File drop: window={window_id}, files={files}, x={x}, y={y}")
             self.emit("file-drop", files, x, y)
         except Exception as e:
             logger.error(f"Error parsing file drop data: {e}")

@@ -97,9 +97,7 @@ class IPCManager:
         if result != 1:
             raise IPCError(f"Failed to send IPC message on channel '{channel}'")
 
-        logger.debug(
-            f"Sent IPC message to window {window_id} on channel '{channel}': {message}"
-        )
+        logger.debug(f"Sent IPC message to window {window_id} on channel '{channel}': {message}")
 
     def broadcast(self, channel: str, message: str) -> None:
         """Broadcast an IPC message to all windows (not implemented)"""

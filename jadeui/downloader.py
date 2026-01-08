@@ -186,10 +186,7 @@ def download_dll(
             tmp_path = tmp_file.name
 
             # Create request with headers
-            request = urllib.request.Request(
-                url,
-                headers={"User-Agent": f"jadeui/{version}"}
-            )
+            request = urllib.request.Request(url, headers={"User-Agent": f"jadeui/{version}"})
 
             with urllib.request.urlopen(request, timeout=60) as response:
                 total_size = int(response.headers.get("Content-Length", 0))
@@ -297,18 +294,21 @@ def cli():
         formatter_class=argparse.RawDescriptionHelpFormatter,
     )
     parser.add_argument(
-        "-v", "--version",
+        "-v",
+        "--version",
         default=DLL_VERSION,
         help=f"DLL 版本号 (默认: {DLL_VERSION})",
     )
     parser.add_argument(
-        "-a", "--arch",
+        "-a",
+        "--arch",
         choices=["x64", "x86"],
         default=get_architecture(),
         help=f"架构 (默认: {get_architecture()})",
     )
     parser.add_argument(
-        "-d", "--dir",
+        "-d",
+        "--dir",
         type=Path,
         help="安装目录",
     )
@@ -343,4 +343,3 @@ def cli():
 
 if __name__ == "__main__":
     sys.exit(cli())
-

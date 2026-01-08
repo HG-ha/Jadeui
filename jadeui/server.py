@@ -79,9 +79,7 @@ class LocalServer:
             return self._url
         else:
             # Fallback to file:// protocol
-            logger.warning(
-                "Local server creation failed, falling back to file:// protocol"
-            )
+            logger.warning("Local server creation failed, falling back to file:// protocol")
             return self._fallback_url()
 
     def stop(self) -> None:

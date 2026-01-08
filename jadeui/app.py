@@ -84,6 +84,7 @@ class JadeUIApp(EventEmitter):
             应用名称字符串
         """
         import uuid
+
         return f"JadeUI_{uuid.uuid4().hex[:8]}"
 
     def _cleanup_old_data_dirs(self) -> None:
@@ -161,9 +162,7 @@ class JadeUIApp(EventEmitter):
 
                 local_app_data = os.environ.get("LOCALAPPDATA", "")
                 if local_app_data:
-                    data_directory = os.path.join(
-                        local_app_data, "JadeUI", app_name
-                    )
+                    data_directory = os.path.join(local_app_data, "JadeUI", app_name)
 
             self._data_directory = data_directory
 
@@ -200,6 +199,7 @@ class JadeUIApp(EventEmitter):
 
     def _register_global_events(self) -> None:
         """Register global event handlers with the DLL"""
+
         # Create app-ready callback
         @AppReadyCallback
         def app_ready_callback(success: int, reason: ctypes.c_char_p) -> int:
@@ -343,6 +343,7 @@ class JadeUIApp(EventEmitter):
         finally:
             # 确保进程退出
             import os
+
             os._exit(0)
 
     def quit(self) -> None:
@@ -396,9 +397,7 @@ class JadeUIApp(EventEmitter):
         self.on("ready", callback)
         return callback
 
-    def on_window_all_closed(
-        self, callback: Callable[[], Any]
-    ) -> Callable[[], Any]:
+    def on_window_all_closed(self, callback: Callable[[], Any]) -> Callable[[], Any]:
         """Decorator for window-all-closed event
 
         Args:

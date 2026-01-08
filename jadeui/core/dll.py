@@ -350,6 +350,7 @@ class DLLManager:
             def stub(*args, **kwargs):
                 logger.debug(f"Called unavailable DLL function: {name}")
                 return 0  # Return 0 for int functions, harmless for None
+
             return stub
 
         return getattr(self.dll, name)
