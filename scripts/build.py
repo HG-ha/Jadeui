@@ -83,6 +83,7 @@ def build(
     show_console: bool = False,
     use_upx: bool = False,
     include_jadeui_dll: bool = True,
+    compression_level: int = 1,
 ) -> int:
     """
     使用 Nuitka 打包 Python 应用
@@ -97,6 +98,7 @@ def build(
         show_console: 是否显示控制台窗口
         use_upx: 是否使用 UPX 压缩
         include_jadeui_dll: 是否自动包含 jadeui DLL
+        compression_level: 压缩级别 0-3（0=不压缩, 1=基础, 2=中等, 3=最大压缩）
 
     Returns:
         子进程的返回码
@@ -160,7 +162,24 @@ def build(
         "--remove-output",
         "--assume-yes-for-downloads",
         "--show-progress",
+        # 排除不必要的模块
+        "--nofollow-import-to=pytest,unittest,setuptools,pip,wheel,distutils",
     ]
+
+    # 根据压缩级别添加优化选项
+    if compression_level >= 1:
+        # 级别1: 基础优化
+        cmd.append("--lto=yes")  # 链接时优化
+    
+    if compression_level >= 2:
+        # 级别2: 中等压缩
+        cmd.append("--python-flag=no_docstrings")  # 移除文档字符串
+        cmd.append("--python-flag=no_asserts")  # 移除 assert 语句
+        # Nuitka onefile 默认已启用压缩，无需额外选项
+    
+    if compression_level >= 3:
+        # 级别3: 最大压缩
+        cmd.append("--python-flag=-OO")  # Python 最高优化级别
 
     # Windows 控制台设置
     if sys.platform == "win32":
@@ -176,7 +195,7 @@ def build(
             else:
                 cmd.append(f"--windows-icon-from-ico={icon}")
 
-    # UPX 压缩
+    # UPX 压缩（在 onefile 模式下压缩内部 DLL）
     if use_upx:
         cmd.append("--enable-plugin=upx")
 
@@ -195,12 +214,21 @@ def build(
     # 添加源文件
     cmd.append(source_file)
 
+    # 压缩级别描述
+    compression_desc = {
+        0: "不压缩",
+        1: "基础优化 (LTO)",
+        2: "中等压缩 (LTO + 无文档/断言)",
+        3: "最大压缩 (LTO + 无文档/断言 + -OO)",
+    }
+
     print("=" * 60)
     print("JadeUI 应用打包")
     print("=" * 60)
     print(f"源文件: {source_file}")
     print(f"输出目录: {output_dir}")
     print(f"输出文件: {output_name}.exe")
+    print(f"压缩级别: {compression_level} - {compression_desc.get(compression_level, '未知')}")
     if icon:
         print(f"图标: {icon}")
     if jadeui_dll_files:
@@ -224,10 +252,18 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python build.py app.py                    # 最简单的打包
+  python build.py app.py                    # 最简单的打包（默认压缩级别1）
+  python build.py app.py -c 2               # 中等压缩（推荐）
+  python build.py app.py -c 3               # 最大压缩
   python build.py app.py --output MyApp     # 指定输出文件名
   python build.py app.py --icon custom.ico  # 使用自定义图标
   python build.py app.py --include-data-dir assets=assets  # 添加额外目录
+
+压缩级别说明:
+  0 - 不压缩：最快编译，最大体积
+  1 - 基础优化：启用 LTO 链接时优化（默认）
+  2 - 中等压缩：LTO + 移除文档字符串和 assert 语句
+  3 - 最大压缩：全部优化 + Python -OO 模式
 
 默认行为:
   - 自动包含 JadeUI DLL 文件
@@ -290,6 +326,16 @@ def main():
         help="不自动包含 JadeUI DLL（默认自动包含）",
     )
 
+    parser.add_argument(
+        "-c",
+        "--compress",
+        type=int,
+        choices=[0, 1, 2, 3],
+        default=1,
+        metavar="LEVEL",
+        help="压缩级别 0-3（0=不压缩, 1=基础LTO, 2=移除文档/断言, 3=最大压缩+UPX）默认: 1",
+    )
+
     args = parser.parse_args()
 
     result = build(
@@ -302,6 +348,7 @@ def main():
         show_console=args.console,
         use_upx=args.upx,
         include_jadeui_dll=not args.no_jadeui_dll,
+        compression_level=args.compress,
     )
 
     sys.exit(result)

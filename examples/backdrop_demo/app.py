@@ -82,12 +82,12 @@ def on_ready():
         transparent=True,  # 必须启用透明才能看到材料效果
         theme=Theme.SYSTEM,
     )
-    
+
     # 监听文件拖放事件
     @window.on("file-drop")
     def on_file_drop(files, x, y):
         """处理文件拖放事件
-        
+
         Args:
             files: 拖放的文件路径列表
             x: 拖放位置 X 坐标
@@ -95,27 +95,27 @@ def on_ready():
         """
         file_count = len([f for f in files if os.path.isfile(f)])
         folder_count = len([f for f in files if os.path.isdir(f)])
-        
+
         print(f"📁 文件拖放: {file_count} 个文件, {folder_count} 个文件夹 at ({x:.0f}, {y:.0f})")
         for file_path in files:
             icon = "📂" if os.path.isdir(file_path) else "📄"
             print(f"   {icon} {file_path}")
-        
+
         # 发送文件信息到前端
         file_info = {
             "files": [
                 {
-                    "path": f, 
+                    "path": f,
                     "name": os.path.basename(f),
                     "isDir": os.path.isdir(f)
-                } 
+                }
                 for f in files
             ],
             "x": x,
             "y": y
         }
         ipc.send(window.id, "fileDrop", json.dumps(file_info))
-    
+
     window.show()
     window.set_backdrop(Backdrop.MICA)
 

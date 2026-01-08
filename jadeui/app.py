@@ -75,6 +75,44 @@ class JadeUIApp(EventEmitter):
         # Global event manager
         self._global_events: Optional[GlobalEventManager] = None
 
+    def _get_app_name(self) -> str:
+        """获取应用名称用于数据目录隔离
+
+        使用 JadeUI_ 前缀 + 随机名称，便于清理旧缓存
+
+        Returns:
+            应用名称字符串
+        """
+        import uuid
+        return f"JadeUI_{uuid.uuid4().hex[:8]}"
+
+    def _cleanup_old_data_dirs(self) -> None:
+        """清理旧的 JadeUI 数据目录"""
+        import os
+        import shutil
+
+        local_app_data = os.environ.get("LOCALAPPDATA", "")
+        if not local_app_data:
+            return
+
+        jadeui_base = os.path.join(local_app_data, "JadeUI")
+        if not os.path.exists(jadeui_base):
+            return
+
+        try:
+            # 删除所有 JadeUI_ 开头的目录
+            for name in os.listdir(jadeui_base):
+                if name.startswith("JadeUI_"):
+                    dir_path = os.path.join(jadeui_base, name)
+                    if os.path.isdir(dir_path):
+                        try:
+                            shutil.rmtree(dir_path)
+                            logger.debug(f"Cleaned up old data dir: {dir_path}")
+                        except Exception as e:
+                            logger.debug(f"Failed to clean {dir_path}: {e}")
+        except Exception as e:
+            logger.debug(f"Error during cleanup: {e}")
+
     @classmethod
     def get_instance(cls) -> Optional["JadeUIApp"]:
         """Get the singleton instance of the app
@@ -95,7 +133,8 @@ class JadeUIApp(EventEmitter):
         Args:
             enable_dev_tools: Whether to enable developer tools (F12)
             log_file: Path to log file (None disables file logging)
-            data_directory: WebView data directory (None uses default, current directory)
+            data_directory: WebView data directory
+                           (None uses default: %LOCALAPPDATA%/JadeUI/<random>)
 
         Returns:
             Self for chaining
@@ -110,6 +149,22 @@ class JadeUIApp(EventEmitter):
             # Store configuration
             self._dev_tools_enabled = enable_dev_tools
             self._log_file = log_file
+
+            # 清理旧的数据目录
+            self._cleanup_old_data_dirs()
+
+            # 设置默认数据目录: %LOCALAPPDATA%/JadeUI/<app_name>
+            if data_directory is None:
+                import os
+
+                app_name = self._get_app_name()
+
+                local_app_data = os.environ.get("LOCALAPPDATA", "")
+                if local_app_data:
+                    data_directory = os.path.join(
+                        local_app_data, "JadeUI", app_name
+                    )
+
             self._data_directory = data_directory
 
             # Initialize lifecycle manager

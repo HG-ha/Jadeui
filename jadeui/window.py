@@ -157,7 +157,7 @@ class Window(EventEmitter):
 
         # Callback references to prevent garbage collection
         self._callbacks: list = []
-        
+
         # file-drop 事件是否已注册
         self._file_drop_registered = False
 
@@ -165,7 +165,7 @@ class Window(EventEmitter):
         self, event: str, callback: Optional[Callable[..., Any]] = None
     ) -> Callable[..., Any]:
         """Register an event listener
-        
+
         Special handling for 'file-drop' event which requires DLL registration.
 
         Args:
@@ -194,25 +194,25 @@ class Window(EventEmitter):
         """注册 file-drop 事件处理器到 DLL"""
         # 添加到本地监听器
         self._listeners["file-drop"].append(callback)
-        
+
         # 只注册一次到 DLL
         if self._file_drop_registered:
             return
-        
+
         # 创建 ctypes 回调
         @FileDropCallback
         def file_drop_callback(window_id: int, json_data: bytes) -> None:
             self._on_file_drop(window_id, json_data)
-        
+
         # 保存引用防止垃圾回收
         self._callbacks.append(file_drop_callback)
-        
+
         # 通过 jade_on 注册到 DLL
         self.dll_manager.jade_on(
             b"file-drop",
             ctypes.cast(file_drop_callback, ctypes.c_void_p),
         )
-        
+
         self._file_drop_registered = True
         logger.info("file-drop event handler registered with DLL")
 
@@ -775,11 +775,11 @@ class Window(EventEmitter):
         try:
             data_str = json_data.decode("utf-8") if json_data else "{}"
             data = json_module.loads(data_str)
-            
+
             files = data.get("files", [])
             x = data.get("x", 0)
             y = data.get("y", 0)
-            
+
             logger.debug(
                 f"File drop: window={window_id}, files={files}, x={x}, y={y}"
             )
