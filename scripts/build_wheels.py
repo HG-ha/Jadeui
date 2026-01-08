@@ -63,6 +63,7 @@ def download_dll(arch: str, version: str) -> bool:
     zip_name = f"JadeView-dist_{arch}.zip"
     url = f"{GITHUB_RELEASE_URL}/v{version}/{zip_name}"
     target_dir = ROOT_DIR / f"JadeView-dist_{arch}"
+    dll_name = "JadeView_x64.dll" if arch == "x64" else "JadeView.dll"
 
     print(f"[*] Downloading {arch} DLL (v{version})...")
     print(f"    URL: {url}")
@@ -95,18 +96,46 @@ def download_dll(arch: str, version: str) -> bool:
 
                 print()  # newline
 
-        # Extract
-        print(f"[*] Extracting to {target_dir}...")
-        if target_dir.exists():
-            shutil.rmtree(target_dir)
+        # Extract to temp directory first
+        temp_extract = ROOT_DIR / f"temp_extract_{arch}"
+        print(f"[*] Extracting...")
+        
+        if temp_extract.exists():
+            shutil.rmtree(temp_extract)
 
         with zipfile.ZipFile(tmp_path, "r") as zip_ref:
-            zip_ref.extractall(ROOT_DIR)
+            zip_ref.extractall(temp_extract)
 
-        # Cleanup temp file
+        # Cleanup zip file
         tmp_path.unlink()
 
-        print(f"[OK] {arch} DLL downloaded successfully")
+        # Find DLL file in extracted contents
+        dll_file = None
+        for path in temp_extract.rglob(dll_name):
+            dll_file = path
+            break
+
+        if not dll_file:
+            print(f"[ERROR] DLL not found in archive: {dll_name}")
+            shutil.rmtree(temp_extract)
+            return False
+
+        # Copy DLL directory contents to target
+        source_dir = dll_file.parent
+        if target_dir.exists():
+            shutil.rmtree(target_dir)
+        target_dir.mkdir(parents=True, exist_ok=True)
+
+        for item in source_dir.iterdir():
+            if item.is_file():
+                shutil.copy2(item, target_dir / item.name)
+            elif item.is_dir():
+                shutil.copytree(item, target_dir / item.name)
+
+        # Cleanup temp extract directory
+        shutil.rmtree(temp_extract)
+
+        print(f"[OK] {arch} DLL downloaded to {target_dir}")
         return True
 
     except urllib.error.HTTPError as e:
