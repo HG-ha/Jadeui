@@ -4,16 +4,16 @@ JadeUI DLL Downloader
 Automatically downloads the JadeView DLL from GitHub releases.
 """
 
-import os
-import sys
-import platform
-import zipfile
-import tempfile
 import logging
-import urllib.request
+import os
+import platform
+import sys
+import tempfile
 import urllib.error
+import urllib.request
+import zipfile
 from pathlib import Path
-from typing import Optional, Tuple
+from typing import Optional
 
 logger = logging.getLogger(__name__)
 
@@ -31,13 +31,13 @@ VERSION = DLL_VERSION
 
 def get_architecture() -> str:
     """Get system architecture
-    
+
     Returns:
         'x64' or 'x86'
     """
     machine = platform.machine().lower()
     is_64bit = sys.maxsize > 2**32
-    
+
     if machine in ("amd64", "x86_64") or is_64bit:
         return "x64"
     else:
@@ -46,10 +46,10 @@ def get_architecture() -> str:
 
 def get_dll_filename(arch: str) -> str:
     """Get the DLL filename for the architecture
-    
+
     Args:
         arch: 'x64' or 'x86'
-        
+
     Returns:
         DLL filename
     """
@@ -61,11 +61,11 @@ def get_dll_filename(arch: str) -> str:
 
 def get_download_url(version: str, arch: str) -> str:
     """Get the download URL for a specific version and architecture
-    
+
     Args:
         version: Version string (e.g., '0.1.0')
         arch: 'x64' or 'x86'
-        
+
     Returns:
         Download URL
     """
@@ -75,14 +75,14 @@ def get_download_url(version: str, arch: str) -> str:
 
 def get_install_dir() -> Path:
     """Get the installation directory for DLL files
-    
+
     Returns:
         Path to install directory
     """
     # Try package directory first
     package_dir = Path(__file__).parent
     dll_dir = package_dir / "dll"
-    
+
     # If not writable, use user data directory
     if not os.access(package_dir, os.W_OK):
         if sys.platform == "win32":
@@ -90,28 +90,28 @@ def get_install_dir() -> Path:
         else:
             base = Path.home() / ".local" / "share"
         dll_dir = base / "jadeui" / "dll"
-    
+
     return dll_dir
 
 
 def find_dll() -> Optional[Path]:
     """Find the DLL file in known locations
-    
+
     Search order:
     1. Package internal dll directory (installed with wheel)
     2. Project root JadeView-dist_{arch} directory
     3. Current working directory
     4. User data directory (downloaded DLL)
-    
+
     Returns:
         Path to DLL if found, None otherwise
     """
     arch = get_architecture()
     dll_name = get_dll_filename(arch)
     dist_dir = f"JadeView-dist_{arch}"
-    
+
     package_dir = Path(__file__).parent
-    
+
     # Search locations (in priority order)
     search_paths = [
         # 1. Package internal dll directory (from wheel)
@@ -123,19 +123,19 @@ def find_dll() -> Optional[Path]:
         # 4. User data directory (downloaded)
         get_install_dir() / dist_dir / dll_name,
     ]
-    
+
     # Also try PyInstaller/Nuitka paths
     try:
         meipass = Path(sys._MEIPASS)  # type: ignore
         search_paths.insert(0, meipass / dist_dir / dll_name)
     except AttributeError:
         pass
-    
+
     for path in search_paths:
         if path.exists():
             logger.debug(f"Found DLL at: {path}")
             return path
-    
+
     return None
 
 
@@ -146,75 +146,75 @@ def download_dll(
     progress_callback: Optional[callable] = None,
 ) -> Path:
     """Download the DLL from GitHub releases
-    
+
     Args:
         version: Version to download (default: current version)
         arch: Architecture ('x64' or 'x86', default: auto-detect)
         install_dir: Installation directory (default: auto)
         progress_callback: Optional callback for progress updates
             Called with (downloaded_bytes, total_bytes)
-    
+
     Returns:
         Path to the installed DLL
-        
+
     Raises:
         RuntimeError: If download fails
     """
     version = version or DLL_VERSION
     arch = arch or get_architecture()
     install_dir = install_dir or get_install_dir()
-    
+
     url = get_download_url(version, arch)
     dll_name = get_dll_filename(arch)
     dist_dir = f"JadeView-dist_{arch}"
-    
-    print(f"📦 JadeUI DLL 下载器")
+
+    print("📦 JadeUI DLL 下载器")
     print(f"   版本: v{version}")
     print(f"   架构: {arch}")
     print(f"   下载地址: {url}")
     print(f"   安装目录: {install_dir}")
-    
+
     # Create install directory
     target_dir = install_dir / dist_dir
     target_dir.mkdir(parents=True, exist_ok=True)
-    
+
     # Download to temp file
     try:
-        print(f"\n⬇️  正在下载...")
-        
+        print("\n⬇️  正在下载...")
+
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
             tmp_path = tmp_file.name
-            
+
             # Create request with headers
             request = urllib.request.Request(
                 url,
                 headers={"User-Agent": f"jadeui/{version}"}
             )
-            
+
             with urllib.request.urlopen(request, timeout=60) as response:
                 total_size = int(response.headers.get("Content-Length", 0))
                 downloaded = 0
                 chunk_size = 8192
-                
+
                 while True:
                     chunk = response.read(chunk_size)
                     if not chunk:
                         break
-                    
+
                     tmp_file.write(chunk)
                     downloaded += len(chunk)
-                    
+
                     if progress_callback:
                         progress_callback(downloaded, total_size)
                     elif total_size > 0:
                         percent = (downloaded / total_size) * 100
                         bar = "█" * int(percent // 5) + "░" * (20 - int(percent // 5))
                         print(f"\r   [{bar}] {percent:.1f}%", end="", flush=True)
-                
+
                 print()  # New line after progress
-        
+
         print(f"✅ 下载完成 ({downloaded / 1024 / 1024:.1f} MB)")
-        
+
     except urllib.error.HTTPError as e:
         os.unlink(tmp_path) if os.path.exists(tmp_path) else None
         raise RuntimeError(f"下载失败: HTTP {e.code} - {e.reason}")
@@ -224,41 +224,41 @@ def download_dll(
     except Exception as e:
         os.unlink(tmp_path) if os.path.exists(tmp_path) else None
         raise RuntimeError(f"下载失败: {e}")
-    
+
     # Extract ZIP
     try:
-        print(f"📂 正在解压...")
-        
+        print("📂 正在解压...")
+
         with zipfile.ZipFile(tmp_path, "r") as zip_ref:
             # Extract all files
             zip_ref.extractall(install_dir)
-        
-        print(f"✅ 解压完成")
-        
+
+        print("✅ 解压完成")
+
     except zipfile.BadZipFile:
         raise RuntimeError("下载的文件不是有效的 ZIP 文件")
     finally:
         # Clean up temp file
         if os.path.exists(tmp_path):
             os.unlink(tmp_path)
-    
+
     # Verify DLL exists
     dll_path = target_dir / dll_name
     if not dll_path.exists():
         raise RuntimeError(f"解压后未找到 DLL 文件: {dll_path}")
-    
-    print(f"\n🎉 安装成功!")
+
+    print("\n🎉 安装成功!")
     print(f"   DLL 路径: {dll_path}")
-    
+
     return dll_path
 
 
 def ensure_dll() -> Path:
     """Ensure DLL is available, downloading if necessary
-    
+
     Returns:
         Path to the DLL
-        
+
     Raises:
         RuntimeError: If DLL cannot be found or downloaded
     """
@@ -267,21 +267,21 @@ def ensure_dll() -> Path:
     if dll_path:
         logger.info(f"Found DLL at: {dll_path}")
         return dll_path
-    
+
     # DLL not found, prompt for download
     print("\n" + "=" * 50)
     print("⚠️  未找到 JadeView DLL")
     print("=" * 50)
-    print(f"\n需要下载 JadeView DLL 才能运行应用。")
+    print("\n需要下载 JadeView DLL 才能运行应用。")
     print(f"下载地址: https://github.com/{GITHUB_REPO}/releases")
     print()
-    
+
     # Auto-download
     try:
         return download_dll()
     except Exception as e:
         print(f"\n❌ 自动下载失败: {e}")
-        print(f"\n请手动下载:")
+        print("\n请手动下载:")
         print(f"  1. 访问 https://github.com/{GITHUB_REPO}/releases")
         print(f"  2. 下载 JadeView-dist_{get_architecture()}.zip")
         print(f"  3. 解压到项目目录或 {get_install_dir()}")
@@ -291,7 +291,7 @@ def ensure_dll() -> Path:
 def cli():
     """Command-line interface for downloading DLL"""
     import argparse
-    
+
     parser = argparse.ArgumentParser(
         description="下载 JadeView DLL",
         formatter_class=argparse.RawDescriptionHelpFormatter,
@@ -317,18 +317,18 @@ def cli():
         action="store_true",
         help="仅检查 DLL 是否存在",
     )
-    
+
     args = parser.parse_args()
-    
+
     if args.check:
         dll_path = find_dll()
         if dll_path:
             print(f"✅ 找到 DLL: {dll_path}")
             return 0
         else:
-            print(f"❌ 未找到 DLL")
+            print("❌ 未找到 DLL")
             return 1
-    
+
     try:
         download_dll(
             version=args.version,

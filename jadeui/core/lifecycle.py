@@ -4,10 +4,10 @@ JadeUI Lifecycle Manager
 Handles application initialization, cleanup, and signal handling.
 """
 
-import signal
 import atexit
-from typing import Callable, Optional
 import logging
+import signal
+from typing import Callable
 
 logger = logging.getLogger(__name__)
 

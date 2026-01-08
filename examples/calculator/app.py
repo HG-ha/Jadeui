@@ -6,14 +6,14 @@ JadeUI 计算器示例 - 最小化实现
 运行方式:
     # 先安装包
     pip install -e .
-    
+
     # 然后运行
     python examples/calculator/app.py
 """
 
 import os
 
-from jadeui import JadeUIApp, Window, LocalServer, IPCManager, Theme, Backdrop
+from jadeui import Backdrop, IPCManager, JadeUIApp, LocalServer, Theme, Window
 
 
 def main():

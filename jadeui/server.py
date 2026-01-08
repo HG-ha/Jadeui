@@ -4,8 +4,8 @@ JadeUI Local Server
 Built-in HTTP server for serving web content.
 """
 
-import logging
 import ctypes
+import logging
 from typing import Optional
 
 from .core import DLLManager

@@ -6,7 +6,6 @@ Helper functions and utilities for JadeUI.
 
 import os
 import sys
-from typing import Optional
 from pathlib import Path
 
 
@@ -48,7 +47,7 @@ def show_error(title: str, message: str) -> None:
             import datetime
 
             f.write(f"\n[{datetime.datetime.now()}] {title}\n{message}\n")
-    except:
+    except Exception:
         pass
 
     # Try Windows message box
@@ -56,7 +55,7 @@ def show_error(title: str, message: str) -> None:
         import ctypes
 
         ctypes.windll.user32.MessageBoxW(0, message, title, 0x10)  # MB_ICONERROR
-    except:
+    except Exception:
         print(f"{title}: {message}")
 
 

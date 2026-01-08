@@ -9,15 +9,15 @@ import logging
 import signal
 import sys
 import threading
-from typing import Optional, Callable, Any
+from typing import Any, Callable, Optional
 
 from .core import DLLManager, LifecycleManager
-from .events import EventEmitter, GlobalEventManager, Events
-from .exceptions import InitializationError
 from .core.types import (
     AppReadyCallback,
     WindowAllClosedCallback,
 )
+from .events import EventEmitter, GlobalEventManager
+from .exceptions import InitializationError
 
 logger = logging.getLogger(__name__)
 
@@ -71,7 +71,7 @@ class JadeUIApp(EventEmitter):
 
         # Callback references to prevent garbage collection
         self._callbacks: list = []
-        
+
         # Global event manager
         self._global_events: Optional[GlobalEventManager] = None
 
@@ -256,7 +256,7 @@ class JadeUIApp(EventEmitter):
 
         This method blocks until all windows are closed.
         Call this after setting up event handlers and windows.
-        
+
         Supports Ctrl+C to terminate the application.
         """
         if not self._initialized:
@@ -276,7 +276,7 @@ class JadeUIApp(EventEmitter):
     def _setup_signal_handlers(self) -> None:
         """设置信号处理器以支持 Ctrl+C"""
         self._shutting_down = False
-        
+
         def signal_handler(signum, frame):
             if self._shutting_down:
                 return
@@ -287,7 +287,7 @@ class JadeUIApp(EventEmitter):
         # 注册 SIGINT (Ctrl+C) 和 SIGTERM
         signal.signal(signal.SIGINT, signal_handler)
         signal.signal(signal.SIGTERM, signal_handler)
-        
+
         # Windows: 设置控制台控制处理器
         if sys.platform == "win32":
             self._setup_windows_console_handler()
@@ -297,14 +297,14 @@ class JadeUIApp(EventEmitter):
         try:
             # 使用 ctypes 直接调用 Windows API
             kernel32 = ctypes.windll.kernel32
-            
+
             # BOOL WINAPI HandlerRoutine(DWORD dwCtrlType)
             HANDLER_ROUTINE = ctypes.WINFUNCTYPE(ctypes.c_bool, ctypes.c_ulong)
-            
+
             CTRL_C_EVENT = 0
             CTRL_BREAK_EVENT = 1
             CTRL_CLOSE_EVENT = 2
-            
+
             @HANDLER_ROUTINE
             def console_handler(ctrl_type):
                 if ctrl_type in (CTRL_C_EVENT, CTRL_BREAK_EVENT, CTRL_CLOSE_EVENT):
@@ -315,7 +315,7 @@ class JadeUIApp(EventEmitter):
                         threading.Thread(target=self._force_quit, daemon=True).start()
                     return True
                 return False
-            
+
             # 保存引用防止垃圾回收
             self._console_handler = console_handler
             kernel32.SetConsoleCtrlHandler(console_handler, True)
@@ -328,7 +328,7 @@ class JadeUIApp(EventEmitter):
         try:
             # 清理窗口
             self.dll_manager.cleanup_all_windows()
-            
+
             # Windows: 发送退出消息到消息循环
             if sys.platform == "win32":
                 try:
@@ -337,7 +337,7 @@ class JadeUIApp(EventEmitter):
                     user32.PostQuitMessage(0)
                 except Exception as e:
                     logger.warning(f"PostQuitMessage failed: {e}")
-                    
+
         except Exception as e:
             logger.error(f"Error during force quit: {e}")
         finally:
@@ -358,7 +358,7 @@ class JadeUIApp(EventEmitter):
         """Clean up application resources"""
         if not self._initialized:
             return
-            
+
         try:
             self.dll_manager.cleanup_all_windows()
             logger.info("Application resources cleaned up")

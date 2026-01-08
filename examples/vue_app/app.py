@@ -11,9 +11,9 @@ JadeUI + Vue 示例
 5. python app.py
 """
 
+import json
 import os
 import sys
-import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 

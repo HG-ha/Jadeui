@@ -18,9 +18,9 @@ import sys
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from jadeui import JadeUIApp, Window
-from jadeui.window import Backdrop, Theme
 from jadeui.ipc import IPCManager
 from jadeui.server import LocalServer
+from jadeui.window import Backdrop, Theme
 
 app = JadeUIApp()
 ipc = IPCManager()

@@ -2,9 +2,9 @@
 JadeUI 后端主导路由示例
 """
 
+import json
 import os
 import sys
-import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 

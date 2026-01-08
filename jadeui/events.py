@@ -6,8 +6,8 @@ Centralized event system for handling window events, app events, and custom even
 
 import ctypes
 import logging
-from typing import Callable, Dict, List, Any, Optional, TYPE_CHECKING
 from collections import defaultdict
+from typing import TYPE_CHECKING, Any, Callable, Dict, List, Optional
 
 if TYPE_CHECKING:
     from .core import DLLManager

@@ -4,24 +4,18 @@ JadeUI DLL Manager
 Handles loading and function binding for the JadeView DLL.
 """
 
-import os
-import sys
 import ctypes
 import logging
-from typing import Optional, Any, List, TYPE_CHECKING
+import os
+import sys
 from pathlib import Path
+from typing import TYPE_CHECKING, Any, List, Optional
 
-from .types import (
-    WindowEventCallback,
-    PageLoadCallback,
-    FileDropCallback,
-    AppReadyCallback,
-    IpcCallback,
-    WindowAllClosedCallback,
-    WebViewWindowOptions,
-    WebViewSettings,
-)
 from ..exceptions import DLLLoadError
+from .types import (
+    WebViewSettings,
+    WebViewWindowOptions,
+)
 
 if TYPE_CHECKING:
     from ctypes import CDLL
@@ -31,7 +25,7 @@ logger = logging.getLogger(__name__)
 
 class DLLManager:
     """Manager for JadeView DLL loading and function binding
-    
+
     Handles automatic discovery, loading, and function binding for the
     JadeView DLL. Functions that don't exist in the DLL are gracefully
     handled with stub implementations.
@@ -60,21 +54,21 @@ class DLLManager:
 
     def _find_dll(self) -> str:
         """Find the JadeView DLL in common locations
-        
+
         If DLL is not found, attempts to download it automatically.
         """
-        from ..downloader import find_dll, ensure_dll, get_architecture
-        
+        from ..downloader import ensure_dll, find_dll, get_architecture
+
         # Try to find existing DLL
         dll_path = find_dll()
         if dll_path:
             return str(dll_path)
-        
+
         # Try legacy paths for backward compatibility
         arch = get_architecture()
         dist_dir = f"JadeView-dist_{arch}"
         dll_name = "JadeView_x64.dll" if arch == "x64" else "JadeView.dll"
-        
+
         legacy_paths = [
             # Package root (old structure)
             Path(__file__).parent.parent.parent / "JadeView-dist_x64" / "JadeView_x64.dll",
@@ -83,18 +77,18 @@ class DLLManager:
             Path.cwd() / "JadeView-dist_x64" / "JadeView_x64.dll",
             Path.cwd() / dist_dir / dll_name,
         ]
-        
+
         # Try PyInstaller/Nuitka paths
         try:
             base_path = sys._MEIPASS  # type: ignore
             legacy_paths.append(Path(base_path) / dist_dir / dll_name)
         except AttributeError:
             pass
-        
+
         for path in legacy_paths:
             if path.exists():
                 return str(path)
-        
+
         # DLL not found - attempt to download
         try:
             dll_path = ensure_dll()
@@ -134,18 +128,18 @@ class DLLManager:
         required: bool = False,
     ) -> bool:
         """Try to bind a function from the DLL
-        
+
         Args:
             name: Function name
             argtypes: Argument types
             restype: Return type
             required: If True, raise error if function not found
-            
+
         Returns:
             True if function was bound successfully
         """
         assert self.dll is not None
-        
+
         try:
             func = getattr(self.dll, name)
             func.argtypes = argtypes
@@ -165,7 +159,7 @@ class DLLManager:
 
         # ==================== Required Functions ====================
         # These must exist for the SDK to work
-        
+
         # Initialization
         self._try_bind(
             "JadeView_init",
@@ -322,10 +316,10 @@ class DLLManager:
 
     def has_function(self, name: str) -> bool:
         """Check if a function is available in the DLL
-        
+
         Args:
             name: Function name
-            
+
         Returns:
             True if function is available
         """
@@ -341,15 +335,15 @@ class DLLManager:
 
     def __getattr__(self, name: str) -> Any:
         """Delegate attribute access to the DLL
-        
+
         For unavailable functions, returns a no-op stub that logs a warning.
         """
         if name.startswith("_"):
             raise AttributeError(f"'{type(self).__name__}' has no attribute '{name}'")
-            
+
         if self.dll is None:
             raise DLLLoadError("DLL not loaded. Call load() first.")
-        
+
         # Check if function is unavailable
         if name in self._unavailable_functions:
             # Return a stub function
@@ -357,5 +351,5 @@ class DLLManager:
                 logger.debug(f"Called unavailable DLL function: {name}")
                 return 0  # Return 0 for int functions, harmless for None
             return stub
-        
+
         return getattr(self.dll, name)

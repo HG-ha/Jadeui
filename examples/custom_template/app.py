@@ -4,9 +4,9 @@ JadeUI 自定义模板示例
 演示如何使用自定义 HTML 模板创建完全不同的布局。
 """
 
+import json
 import os
 import sys
-import json
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 

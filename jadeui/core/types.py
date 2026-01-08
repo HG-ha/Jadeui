@@ -5,8 +5,7 @@ ctypes structures and callback type definitions for JadeView DLL interface.
 """
 
 import ctypes
-from typing import Optional, Callable, Any
-
+from typing import Callable, Optional
 
 # Callback function types
 WindowEventCallback = ctypes.CFUNCTYPE(

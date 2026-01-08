@@ -23,12 +23,12 @@ import json
 import logging
 import os
 import shutil
-from typing import Callable, Dict, List, Optional, Any
 from dataclasses import dataclass
+from typing import Dict, List, Optional
 
 from .ipc import IPCManager
-from .window import Window, Theme, Backdrop
 from .server import LocalServer
+from .window import Backdrop, Theme, Window
 
 logger = logging.getLogger(__name__)
 
@@ -153,7 +153,7 @@ class Router:
 
     def set_backdrop(self, backdrop: str) -> None:
         """设置窗口背景材料
-        
+
         Args:
             backdrop: mica, micaAlt, acrylic
         """
@@ -353,13 +353,13 @@ class Router:
         # 检测用户自定义资源
         user_css = ""
         user_js = ""
-        
+
         # 检查用户 CSS 文件
         for css_path in ["css/app.css", "css/style.css", "app.css", "style.css"]:
             if os.path.exists(os.path.join(self._web_dir, css_path)):
                 user_css = f'<link rel="stylesheet" href="{css_path}">'
                 break
-        
+
         # 检查用户 JS 文件
         for js_path in ["js/app.js", "js/main.js", "app.js", "main.js"]:
             if os.path.exists(os.path.join(self._web_dir, js_path)):

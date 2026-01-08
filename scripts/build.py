@@ -170,13 +170,13 @@ def build(
     if compression_level >= 1:
         # 级别1: 基础优化
         cmd.append("--lto=yes")  # 链接时优化
-    
+
     if compression_level >= 2:
         # 级别2: 中等压缩
         cmd.append("--python-flag=no_docstrings")  # 移除文档字符串
         cmd.append("--python-flag=no_asserts")  # 移除 assert 语句
         # Nuitka onefile 默认已启用压缩，无需额外选项
-    
+
     if compression_level >= 3:
         # 级别3: 最大压缩
         cmd.append("--python-flag=-OO")  # Python 最高优化级别

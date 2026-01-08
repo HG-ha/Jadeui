@@ -6,16 +6,16 @@ Window management for JadeUI applications.
 
 import ctypes
 import logging
-from typing import Optional, Union, Callable, Any, Tuple
+from typing import Any, Callable, Optional, Tuple
 
 from .core import DLLManager
 from .core.types import (
-    WebViewWindowOptions,
-    WebViewSettings,
     RGBA,
-    WindowEventCallback,
-    PageLoadCallback,
     FileDropCallback,
+    PageLoadCallback,
+    WebViewSettings,
+    WebViewWindowOptions,
+    WindowEventCallback,
 )
 from .events import EventEmitter
 from .exceptions import WindowCreationError
@@ -26,7 +26,7 @@ logger = logging.getLogger(__name__)
 # Theme constants
 class Theme:
     """Window theme constants"""
-    
+
     LIGHT = "Light"
     DARK = "Dark"
     SYSTEM = "System"
@@ -35,10 +35,10 @@ class Theme:
 # Backdrop material constants (Windows 11)
 class Backdrop:
     """Window backdrop material constants for Windows 11
-    
+
     Note: Window must have transparent=True for backdrop effects to work.
     """
-    
+
     MICA = "mica"           # Mica 效果，Windows 11 默认背景材料
     MICA_ALT = "micaAlt"    # Mica Alt 效果，Mica 的替代版本
     ACRYLIC = "acrylic"     # Acrylic 效果，半透明模糊背景
@@ -115,7 +115,7 @@ class Window(EventEmitter):
                 - preload_js (str): JavaScript to run before page load
         """
         super().__init__()
-        
+
         self.dll_manager = dll_manager or DLLManager()
         if not self.dll_manager.is_loaded():
             self.dll_manager.load()
@@ -764,14 +764,14 @@ class Window(EventEmitter):
         self, window_id: int, json_data: bytes
     ) -> None:
         """Handle file drop events
-        
+
         Args:
             window_id: The window ID
             json_data: JSON data containing files array and position
                       Format: {"files": ["path1", "path2"], "x": x, "y": y}
         """
         import json as json_module
-        
+
         try:
             data_str = json_data.decode("utf-8") if json_data else "{}"
             data = json_module.loads(data_str)

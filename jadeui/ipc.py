@@ -5,7 +5,7 @@ Inter-process communication between Python backend and web frontend.
 """
 
 import logging
-from typing import Callable, Dict, Any, Optional
+from typing import Any, Callable, Dict, Optional
 
 from .core import DLLManager
 from .core.types import IpcCallback, IPCHandler

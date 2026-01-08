@@ -56,29 +56,31 @@ Example with IPC:
     app.run()
 """
 
+from . import utils
 from .app import JadeUIApp
-from .window import Window, Theme, Backdrop
-from .ipc import IPCManager
-from .server import LocalServer
-from .events import EventEmitter, Events
-from .router import Router
-from .core.types import RGBA, WebViewWindowOptions, WebViewSettings
-from .exceptions import (
-    JadeUIError,
-    DLLLoadError,
-    WindowCreationError,
-    IPCError,
-    ServerError,
-    InitializationError,
+from .core.types import RGBA, WebViewSettings, WebViewWindowOptions
+from .downloader import (
+    VERSION as DLL_VERSION,
 )
 from .downloader import (
     download_dll,
     ensure_dll,
     find_dll,
     get_architecture,
-    VERSION as DLL_VERSION,
 )
-from . import utils
+from .events import EventEmitter, Events
+from .exceptions import (
+    DLLLoadError,
+    InitializationError,
+    IPCError,
+    JadeUIError,
+    ServerError,
+    WindowCreationError,
+)
+from .ipc import IPCManager
+from .router import Router
+from .server import LocalServer
+from .window import Backdrop, Theme, Window
 
 __version__ = "0.1.1"
 __author__ = "JadeView Team"
