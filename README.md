@@ -7,7 +7,6 @@
 <p align="center">
   <a href="https://pypi.org/project/jadeui/"><img src="https://img.shields.io/pypi/v/jadeui.svg" alt="PyPI version"></a>
   <a href="https://pypi.org/project/jadeui/"><img src="https://img.shields.io/pypi/pyversions/jadeui.svg" alt="Python versions"></a>
-  <a href="https://github.com/JadeViewDocs/library/blob/main/LICENSE"><img src="https://img.shields.io/badge/license-MIT-blue.svg" alt="License"></a>
 </p>
 
 ---

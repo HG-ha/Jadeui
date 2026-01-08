@@ -55,6 +55,10 @@ jadeui/dll/
 JadeViewDemo_error.log
 JadeUI_error.log
 
+# Node.js
+node_modules/
+package-lock.json
+
 # OS
 .DS_Store
 Thumbs.db
