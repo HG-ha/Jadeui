@@ -19,6 +19,7 @@ JadeUI 是 [JadeView](https://jade.run) 的 Python SDK，让你可以使用 Pyth
 - **现代外观** - 支持 Windows 11 Mica/Acrylic 效果
 - **主题切换** - Light/Dark/System 主题
 - **IPC 通信** - Python 与前端双向通信
+- **打包体积** - 极小的依赖，打包后体积仅有8MB左右
 
 ## 安装
 
@@ -196,6 +197,40 @@ window.is_focused
 ## API 文档
 
 完整文档请访问: https://jade.run/python-sdk
+
+## 示例效果
+
+### 计算器
+
+简单的计算器示例，展示基本的窗口和 IPC 通信。
+
+![Calculator Demo](assets/calculator_iiBxCxUko6.png)
+
+### Backdrop 效果
+
+展示 Windows 11 Mica/Acrylic 背景效果。
+
+![Backdrop Demo](assets/backdrop_demo.png)
+
+### 路由示例
+
+使用内置路由系统实现多页面应用。
+
+![Router Demo](assets/router_demo.png)
+
+### 自定义模板
+
+自定义 CSS 样式的多页面应用示例。
+
+![Custom Template Demo](assets/custom_demo.png)
+
+### Vue 应用
+
+使用 Vue.js 构建的现代前端应用示例。
+
+![Vue App Demo](assets/vueapp.png)
+
+> 更多示例请查看 [examples](./examples) 目录。
 
 ## 系统要求
 
