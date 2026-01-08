@@ -92,11 +92,11 @@ class JadeUIApp(EventEmitter):
         import os
         import shutil
 
-        local_app_data = os.environ.get("LOCALAPPDATA", "")
-        if not local_app_data:
+        temp_dir = os.environ.get("TEMP", os.environ.get("TMP", ""))
+        if not temp_dir:
             return
 
-        jadeui_base = os.path.join(local_app_data, "JadeUI")
+        jadeui_base = os.path.join(temp_dir, "JadeUI")
         if not os.path.exists(jadeui_base):
             return
 
@@ -154,15 +154,15 @@ class JadeUIApp(EventEmitter):
             # 清理旧的数据目录
             self._cleanup_old_data_dirs()
 
-            # 设置默认数据目录: %LOCALAPPDATA%/JadeUI/<app_name>
+            # 设置默认数据目录: %TEMP%/JadeUI/<app_name>
             if data_directory is None:
                 import os
 
                 app_name = self._get_app_name()
 
-                local_app_data = os.environ.get("LOCALAPPDATA", "")
-                if local_app_data:
-                    data_directory = os.path.join(local_app_data, "JadeUI", app_name)
+                temp_dir = os.environ.get("TEMP", os.environ.get("TMP", ""))
+                if temp_dir:
+                    data_directory = os.path.join(temp_dir, "JadeUI", app_name)
 
             self._data_directory = data_directory
 
