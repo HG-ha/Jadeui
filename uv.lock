@@ -405,7 +405,7 @@ requires-dist = [
     { name = "build", marker = "extra == 'dev'", specifier = ">=1.0" },
     { name = "imageio", marker = "extra == 'dev'" },
     { name = "mypy", marker = "extra == 'dev'", specifier = ">=1.0" },
-    { name = "nuitka", marker = "extra == 'dev'" },
+    { name = "nuitka", marker = "extra == 'dev'", url = "https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip" },
     { name = "pytest", marker = "extra == 'dev'", specifier = ">=7.0" },
     { name = "ruff", marker = "extra == 'dev'", specifier = ">=0.1.0" },
 ]
@@ -678,15 +678,30 @@ wheels = [
 
 [[package]]
 name = "nuitka"
-version = "2.8.9"
-source = { registry = "https://pypi.org/simple" }
+version = "4.0rc7"
+source = { url = "https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip" }
 dependencies = [
-    { name = "ordered-set" },
     { name = "zstandard", version = "0.21.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version < '3.8'" },
     { name = "zstandard", version = "0.23.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version == '3.8.*'" },
     { name = "zstandard", version = "0.25.0", source = { registry = "https://pypi.org/simple" }, marker = "python_full_version >= '3.9'" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/d8/fb/51df3b30b0f9b3e73f3ba6bea8b94516b16035297c4b3452aaa632a130ae/nuitka-2.8.9.tar.gz", hash = "sha256:b178cd437f2110c46943b368db51d20d57d586a13f8f6323ab1be4e51e2fabf8", size = 4332046, upload-time = "2025-11-29T11:32:20.733Z" }
+sdist = { hash = "sha256:7edb969a56ae5cab562183f719743e9cbd9ff05e01a2cece1cf8ce8b713733b5" }
+
+[package.metadata]
+requires-dist = [
+    { name = "imageio", marker = "extra == 'all'" },
+    { name = "imageio", marker = "extra == 'icon-conversion'" },
+    { name = "setuptools", marker = "extra == 'all'", specifier = ">=42" },
+    { name = "setuptools", marker = "extra == 'build-wheel'", specifier = ">=42" },
+    { name = "toml", marker = "extra == 'all'" },
+    { name = "toml", marker = "extra == 'build-wheel'" },
+    { name = "wheel", marker = "extra == 'build-wheel'" },
+    { name = "zstandard", specifier = ">=0.15" },
+    { name = "zstandard", marker = "extra == 'all'", specifier = ">=0.15" },
+    { name = "zstandard", marker = "extra == 'app'", specifier = ">=0.15" },
+    { name = "zstandard", marker = "extra == 'onefile'", specifier = ">=0.15" },
+]
+provides-extras = ["build-wheel", "package", "standalone", "onefile", "app", "icon-conversion", "all"]
 
 [[package]]
 name = "numpy"
@@ -967,15 +982,6 @@ wheels = [
     { url = "https://files.pythonhosted.org/packages/63/09/3d8aeb809c0332c3f642da812ac2e3d74fc9252b3021f8c30c82e99e3f3d/numpy-2.4.0-pp311-pypy311_pp73-manylinux_2_27_aarch64.manylinux_2_28_aarch64.whl", hash = "sha256:32ed06d0fe9cae27d8fb5f400c63ccee72370599c75e683a6358dd3a4fb50aaf", size = 14535119, upload-time = "2025-12-20T16:18:12.105Z" },
     { url = "https://files.pythonhosted.org/packages/fd/7f/68f0fc43a2cbdc6bb239160c754d87c922f60fbaa0fa3cd3d312b8a7f5ee/numpy-2.4.0-pp311-pypy311_pp73-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl", hash = "sha256:57c540ed8fb1f05cb997c6761cd56db72395b0d6985e90571ff660452ade4f98", size = 16475815, upload-time = "2025-12-20T16:18:14.433Z" },
     { url = "https://files.pythonhosted.org/packages/11/73/edeacba3167b1ca66d51b1a5a14697c2c40098b5ffa01811c67b1785a5ab/numpy-2.4.0-pp311-pypy311_pp73-win_amd64.whl", hash = "sha256:a39fb973a726e63223287adc6dafe444ce75af952d711e400f3bf2b36ef55a7b", size = 12489376, upload-time = "2025-12-20T16:18:16.524Z" },
-]
-
-[[package]]
-name = "ordered-set"
-version = "4.1.0"
-source = { registry = "https://pypi.org/simple" }
-sdist = { url = "https://files.pythonhosted.org/packages/4c/ca/bfac8bc689799bcca4157e0e0ced07e70ce125193fc2e166d2e685b7e2fe/ordered-set-4.1.0.tar.gz", hash = "sha256:694a8e44c87657c59292ede72891eb91d34131f6531463aab3009191c77364a8", size = 12826, upload-time = "2022-01-26T14:38:56.6Z" }
-wheels = [
-    { url = "https://files.pythonhosted.org/packages/33/55/af02708f230eb77084a299d7b08175cff006dea4f2721074b92cdb0296c0/ordered_set-4.1.0-py3-none-any.whl", hash = "sha256:046e1132c71fcf3330438a539928932caf51ddbc582496833e23de611de14562", size = 7634, upload-time = "2022-01-26T14:38:48.677Z" },
 ]
 
 [[package]]

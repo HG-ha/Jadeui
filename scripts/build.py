@@ -4,9 +4,10 @@ JadeUI 应用打包脚本
 使用 Nuitka 将 Python 应用打包成独立的可执行文件
 
 为什么使用 Nuitka 4.0rc7?
-- Nuitka 官方稳定版 (2.x/3.x) 的 onefile 模式存在 bug，没有正确打包 VC++ 运行时
+- Nuitka 官方稳定版 (2.x) 的 onefile 模式存在 bug，没有正确打包 VC++ 运行时
 - 导致生成的 exe 在纯净 Windows 系统上无法运行（缺少 vcruntime140.dll）
-- Nuitka 4.0 测试版修复了此问题，onefile bootstrap 使用静态链接
+- Nuitka 4.0rc7 测试版修复了此问题，onefile bootstrap 使用静态链接
+- 后续官方发布4.0正式版后，将在之后的版本同步使用
 - 安装方式: pip install jadeui[dev] 会自动从仓库下载 nuitka-4.0.rc7.zip
 """
 
@@ -35,7 +36,13 @@ def get_jadeui_dll_path() -> Path | None:
         pass
 
     # 回退：手动确定架构和目录
-    arch = "x64" if platform.machine().endswith("64") else "x86"
+    machine = platform.machine().lower()
+    if machine in ("arm64", "aarch64"):
+        arch = "arm64"
+    elif machine in ("amd64", "x86_64") or machine.endswith("64"):
+        arch = "x64"
+    else:
+        arch = "x86"
     # 新格式: JadeView_win_{arch}_static_v{version}
     # 由于不知道确切版本，尝试查找匹配的目录
     

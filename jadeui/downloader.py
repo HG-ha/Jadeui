@@ -38,15 +38,20 @@ def get_architecture() -> str:
     """Get system architecture
 
     Returns:
-        'x64' or 'x86'
+        'x64', 'x86', or 'arm64'
     """
     machine = platform.machine().lower()
-    is_64bit = sys.maxsize > 2**32
 
-    if machine in ("amd64", "x86_64") or is_64bit:
+    if machine in ("arm64", "aarch64"):
+        return "arm64"
+    elif machine in ("amd64", "x86_64"):
         return "x64"
-    else:
+    elif machine in ("x86", "i386", "i686"):
         return "x86"
+    else:
+        # 回退：根据 Python 位数判断
+        is_64bit = sys.maxsize > 2**32
+        return "x64" if is_64bit else "x86"
 
 
 def get_dll_filename(arch: str, link_type: str = LINK_TYPE) -> str:
