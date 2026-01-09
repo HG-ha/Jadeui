@@ -22,6 +22,7 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
+
 class DLLManager:
     """Manager for JadeView DLL loading and function binding
 
