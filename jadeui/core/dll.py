@@ -22,7 +22,6 @@ if TYPE_CHECKING:
 
 logger = logging.getLogger(__name__)
 
-
 class DLLManager:
     """Manager for JadeView DLL loading and function binding
 
@@ -307,6 +306,13 @@ class DLLManager:
         self._try_bind(
             "set_window_max_size",
             [ctypes.c_uint32, ctypes.c_int, ctypes.c_int],
+            ctypes.c_int,
+        )
+
+        # WebView info
+        self._try_bind(
+            "get_webview_version",
+            [ctypes.c_char_p, ctypes.c_size_t],
             ctypes.c_int,
         )
 

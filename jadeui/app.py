@@ -197,6 +197,29 @@ class JadeUIApp(EventEmitter):
         except Exception as e:
             raise InitializationError(f"Failed to initialize JadeUI: {e}")
 
+    def get_webview_version(self) -> Optional[str]:
+        """Get the WebView engine version
+
+        Returns:
+            Version string (e.g., "120.0.2210.144") or None if not available
+        """
+        if not self._initialized:
+            return None
+
+        if not self.dll_manager.has_function("get_webview_version"):
+            logger.debug("get_webview_version not available in DLL")
+            return None
+
+        try:
+            buffer = ctypes.create_string_buffer(256)
+            result = self.dll_manager.get_webview_version(buffer, 256)
+            if result == 1:
+                return buffer.value.decode("utf-8")
+            return None
+        except Exception as e:
+            logger.debug(f"Failed to get WebView version: {e}")
+            return None
+
     def _register_global_events(self) -> None:
         """Register global event handlers with the DLL"""
 
