@@ -37,14 +37,11 @@ pip install jadeui
 from jadeui import JadeUIApp, Window
 
 app = JadeUIApp()
-app.initialize()  # 可选参数见下方
 
 @app.on_ready
 def on_ready():
     window = Window(
         title="Hello JadeUI",
-        width=800,
-        height=600,
         url="https://example.com"
     )
     window.show()
@@ -58,7 +55,7 @@ app.run()
 app.initialize(
     enable_dev_tools=True,      # 启用开发者工具 (F12)
     log_file="./app.log",       # 日志文件路径
-    data_directory="./data",    # WebView 数据目录，否则在当前目录解压资源
+    data_directory="./data",    # WebView 数据目录，不指定的话不会持久化
 )
 ```
 
