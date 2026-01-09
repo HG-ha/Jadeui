@@ -4,6 +4,8 @@ JadeUI IPC Manager
 Inter-process communication between Python backend and web frontend.
 """
 
+from __future__ import annotations
+
 import logging
 from typing import Any, Callable, Dict, Optional
 

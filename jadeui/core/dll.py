@@ -4,6 +4,8 @@ JadeUI DLL Manager
 Handles loading and function binding for the JadeView DLL.
 """
 
+from __future__ import annotations
+
 import ctypes
 import logging
 import os

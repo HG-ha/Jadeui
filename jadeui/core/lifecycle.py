@@ -4,6 +4,8 @@ JadeUI Lifecycle Manager
 Handles application initialization, cleanup, and signal handling.
 """
 
+from __future__ import annotations
+
 import atexit
 import logging
 import signal

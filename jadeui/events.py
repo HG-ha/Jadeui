@@ -4,6 +4,8 @@ JadeUI Event System
 Centralized event system for handling window events, app events, and custom events.
 """
 
+from __future__ import annotations
+
 import ctypes
 import logging
 from collections import defaultdict
