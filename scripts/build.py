@@ -1,4 +1,6 @@
 #!/usr/bin/env python
+from __future__ import annotations
+
 """
 JadeUI 应用打包脚本
 使用 Nuitka 将 Python 应用打包成独立的可执行文件
