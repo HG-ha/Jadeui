@@ -3,52 +3,18 @@
 JadeUI 应用打包脚本
 使用 Nuitka 将 Python 应用打包成独立的可执行文件
 
-注意: 
-- 默认使用 PyPI 上的 Nuitka 稳定版
-- 如需 onefile 模式在纯净 Windows 上运行（无需 VC++ 运行时），需安装 Nuitka 4.0 测试版:
-  pip install -U "https://github.com/ArcletProject/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip"
+为什么使用 Nuitka 4.0rc7?
+- Nuitka 官方稳定版 (2.x/3.x) 的 onefile 模式存在 bug，没有正确打包 VC++ 运行时
+- 导致生成的 exe 在纯净 Windows 系统上无法运行（缺少 vcruntime140.dll）
+- Nuitka 4.0 测试版修复了此问题，onefile bootstrap 使用静态链接
+- 安装方式: pip install jadeui[dev] 会自动从仓库下载 nuitka-4.0.rc7.zip
 """
 
 import argparse
 import platform
-import re
 import subprocess
 import sys
 from pathlib import Path
-
-# Nuitka 推荐版本 (4.0 开始 onefile 不需要 vcruntime)
-NUITKA_RECOMMENDED_VERSION = "4.0"
-
-
-def check_nuitka_version() -> tuple[bool, str]:
-    """
-    检查 Nuitka 版本
-    
-    Returns:
-        (是否满足要求, 版本号字符串)
-    """
-    try:
-        result = subprocess.run(
-            [sys.executable, "-m", "nuitka", "--version"],
-            capture_output=True,
-            text=True,
-        )
-        if result.returncode != 0:
-            return False, "未安装"
-        
-        # 解析版本号 (如 "4.0rc5" 或 "2.8.9")
-        version_line = result.stdout.strip().split("\n")[0]
-        match = re.match(r"(\d+)\.(\d+)", version_line)
-        if match:
-            major, minor = int(match.group(1)), int(match.group(2))
-            version_str = version_line
-            # 4.0+ 满足要求
-            if major >= 4:
-                return True, version_str
-            return False, version_str
-        return False, version_line
-    except Exception:
-        return False, "检测失败"
 
 
 def get_jadeui_dll_path() -> Path | None:
@@ -175,15 +141,6 @@ def build(
     if not source_path.exists():
         print(f"错误: 源文件不存在: {source_file}")
         return 1
-
-    # 检查 Nuitka 版本
-    version_ok, nuitka_version = check_nuitka_version()
-    if not version_ok:
-        print(f"ℹ️  提示: 当前 Nuitka 版本 ({nuitka_version})")
-        print(f"   由于官方bug，onefile 模式没有正确打包 VC++ 运行时")
-        print(f"   如需在纯净 Windows 运行，请升级到 Nuitka {NUITKA_RECOMMENDED_VERSION}+ 测试版:")
-        print(f"   pip install -U \"https://github.com/ArcletProject/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip\"")
-        print()
 
     # 源文件所在目录
     source_dir = source_path.parent

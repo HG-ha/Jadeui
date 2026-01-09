@@ -35,7 +35,7 @@ dev = [
     "mypy>=1.0",
     "build>=1.0",
     "imageio",
-    "nuitka",  # 推荐 4.0+ (onefile 无需 vcruntime)，见 scripts/build.py 说明
+    "nuitka @ https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip",  # 4.0+ onefile 无需 vcruntime
 ]
 
 [project.scripts]
@@ -50,6 +50,9 @@ Issues = "https://github.com/ArcletProject/jadeui/issues"
 [build-system]
 requires = ["hatchling"]
 build-backend = "hatchling.build"
+
+[tool.hatch.metadata]
+allow-direct-references = true
 
 [tool.hatch.build.targets.wheel]
 packages = ["jadeui"]
