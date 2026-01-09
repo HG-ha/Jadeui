@@ -10,14 +10,39 @@ JadeUI 应用打包脚本
 - 导致生成的 exe 在纯净 Windows 系统上无法运行（缺少 vcruntime140.dll）
 - Nuitka 4.0rc7 测试版修复了此问题，onefile bootstrap 使用静态链接
 - 后续官方发布4.0正式版后，将在之后的版本同步使用
-- 安装方式: pip install jadeui[dev] 会自动从仓库下载 nuitka-4.0.rc7.zip
+- 安装方式: pip install https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip
 """
 
 import argparse
 import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+# Nuitka 安装命令
+NUITKA_INSTALL_CMD = "pip install https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip"
+
+
+def check_nuitka() -> tuple[bool, str | None]:
+    """
+    检查 Nuitka 是否已安装及版本
+    
+    Returns:
+        (是否已安装, 版本号或None)
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "nuitka", "--version"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode == 0:
+            version_line = result.stdout.strip().split("\n")[0]
+            return True, version_line
+        return False, None
+    except Exception:
+        return False, None
 
 
 def get_jadeui_dll_path() -> Path | None:
@@ -150,6 +175,26 @@ def build(
     if not source_path.exists():
         print(f"错误: 源文件不存在: {source_file}")
         return 1
+
+    # 检查 Nuitka 是否已安装
+    nuitka_installed, nuitka_version = check_nuitka()
+    if not nuitka_installed:
+        print("❌ 错误: 未安装 Nuitka")
+        print()
+        print("请先安装 Nuitka 4.0rc7 (推荐，onefile 模式无需 VC++ 运行时):")
+        print(f"  {NUITKA_INSTALL_CMD}")
+        print()
+        print("或安装 PyPI 稳定版 (onefile 需要目标系统有 VC++ 运行时):")
+        print("  pip install nuitka")
+        return 1
+    
+    # 检查版本是否是 4.0+
+    is_4x = nuitka_version and (nuitka_version.startswith("4.") or nuitka_version.startswith("5."))
+    if not is_4x and onefile:
+        print(f"⚠️  提示: 当前 Nuitka 版本 ({nuitka_version})")
+        print("   onefile 模式可能需要目标系统安装 VC++ 运行时")
+        print(f"   推荐升级: {NUITKA_INSTALL_CMD}")
+        print()
 
     # 源文件所在目录
     source_dir = source_path.parent
