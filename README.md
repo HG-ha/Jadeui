@@ -49,16 +49,6 @@ def on_ready():
 app.run()
 ```
 
-### 初始化选项
-
-```python
-app.initialize(
-    enable_dev_tools=True,      # 启用开发者工具 (F12)
-    log_file="./app.log",       # 日志文件路径
-    data_directory="./data",    # WebView 数据目录，不指定的话不会持久化
-)
-```
-
 ## 示例项目
 
 查看 [examples](./examples) 目录获取完整示例：
