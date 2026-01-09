@@ -59,37 +59,36 @@ class DLLManager:
 
         If DLL is not found, attempts to download it automatically.
         """
-        from ..downloader import ensure_dll, find_dll, get_architecture
+        from ..downloader import (
+            ensure_dll,
+            find_dll,
+            get_architecture,
+            get_dist_dir_name,
+            get_dll_filename,
+        )
 
         # Try to find existing DLL
         dll_path = find_dll()
         if dll_path:
             return str(dll_path)
 
-        # Try legacy paths for backward compatibility
+        # Current naming convention
         arch = get_architecture()
-        dist_dir = f"JadeView-dist_{arch}"
-        dll_name = "JadeView_x64.dll" if arch == "x64" else "JadeView.dll"
-
-        legacy_paths = [
-            # Package root (old structure)
-            Path(__file__).parent.parent.parent / "JadeView-dist_x64" / "JadeView_x64.dll",
-            Path(__file__).parent.parent.parent / dist_dir / dll_name,
-            # Current working directory
-            Path.cwd() / "JadeView-dist_x64" / "JadeView_x64.dll",
-            Path.cwd() / dist_dir / dll_name,
-        ]
+        dist_dir = get_dist_dir_name(arch)
+        dll_name = get_dll_filename(arch)
 
         # Try PyInstaller/Nuitka paths
         try:
             base_path = sys._MEIPASS  # type: ignore
-            legacy_paths.append(Path(base_path) / dist_dir / dll_name)
+            meipass_paths = [
+                Path(base_path) / dist_dir / dll_name,
+                Path(base_path) / "lib" / dist_dir / dll_name,
+            ]
+            for path in meipass_paths:
+                if path.exists():
+                    return str(path)
         except AttributeError:
             pass
-
-        for path in legacy_paths:
-            if path.exists():
-                return str(path)
 
         # DLL not found - attempt to download
         try:

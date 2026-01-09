@@ -2,13 +2,53 @@
 """
 JadeUI 应用打包脚本
 使用 Nuitka 将 Python 应用打包成独立的可执行文件
+
+注意: 
+- 默认使用 PyPI 上的 Nuitka 稳定版
+- 如需 onefile 模式在纯净 Windows 上运行（无需 VC++ 运行时），需安装 Nuitka 4.0 测试版:
+  pip install -U "https://github.com/ArcletProject/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip"
 """
 
 import argparse
 import platform
+import re
 import subprocess
 import sys
 from pathlib import Path
+
+# Nuitka 推荐版本 (4.0 开始 onefile 不需要 vcruntime)
+NUITKA_RECOMMENDED_VERSION = "4.0"
+
+
+def check_nuitka_version() -> tuple[bool, str]:
+    """
+    检查 Nuitka 版本
+    
+    Returns:
+        (是否满足要求, 版本号字符串)
+    """
+    try:
+        result = subprocess.run(
+            [sys.executable, "-m", "nuitka", "--version"],
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            return False, "未安装"
+        
+        # 解析版本号 (如 "4.0rc5" 或 "2.8.9")
+        version_line = result.stdout.strip().split("\n")[0]
+        match = re.match(r"(\d+)\.(\d+)", version_line)
+        if match:
+            major, minor = int(match.group(1)), int(match.group(2))
+            version_str = version_line
+            # 4.0+ 满足要求
+            if major >= 4:
+                return True, version_str
+            return False, version_str
+        return False, version_line
+    except Exception:
+        return False, "检测失败"
 
 
 def get_jadeui_dll_path() -> Path | None:
@@ -18,34 +58,60 @@ def get_jadeui_dll_path() -> Path | None:
     Returns:
         DLL 目录路径，如果未找到返回 None
     """
-    # 确定架构
+    # 尝试使用 jadeui.downloader 模块
+    try:
+        from jadeui.downloader import find_dll
+
+        dll_path = find_dll()
+        if dll_path:
+            return dll_path.parent
+    except ImportError:
+        pass
+
+    # 回退：手动确定架构和目录
     arch = "x64" if platform.machine().endswith("64") else "x86"
-    dist_dir = f"JadeView-dist_{arch}"
+    # 新格式: JadeView_win_{arch}_static_v{version}
+    # 由于不知道确切版本，尝试查找匹配的目录
+    
+    def find_matching_dir(base_path: Path) -> Path | None:
+        """查找匹配的 DLL 目录"""
+        if not base_path.exists():
+            return None
+        # 优先查找新格式目录
+        for pattern in [f"JadeView_win_{arch}_static_*", f"JadeView_win_{arch}_dynamic_*"]:
+            matches = list(base_path.glob(pattern))
+            if matches:
+                # 返回最新版本（按名称排序）
+                return sorted(matches)[-1]
+        return None
 
     # 尝试从已安装的 jadeui 包中查找
     try:
         import jadeui
 
         package_path = Path(jadeui.__file__).parent
-        dll_dir = package_path / "dll" / dist_dir
-        if dll_dir.exists():
-            return dll_dir
+        for subdir in ["dll", "lib"]:
+            dll_dir = find_matching_dir(package_path / subdir)
+            if dll_dir:
+                return dll_dir
     except ImportError:
         pass
 
     # 尝试从当前项目中查找（开发模式）
-    search_paths = [
-        # 项目根目录
-        Path.cwd() / "jadeui" / "dll" / dist_dir,
-        # 脚本所在目录的父目录
-        Path(__file__).parent.parent / "jadeui" / "dll" / dist_dir,
-        # 直接在当前目录
-        Path.cwd() / dist_dir,
+    search_bases = [
+        Path.cwd() / "jadeui" / "dll",
+        Path.cwd() / "jadeui" / "lib",
+        Path.cwd() / "lib",
+        Path(__file__).parent.parent / "jadeui" / "dll",
+        Path(__file__).parent.parent / "jadeui" / "lib",
+        Path(__file__).parent.parent / "lib",
+        Path.cwd(),
     ]
 
-    for path in search_paths:
-        if path.exists():
-            return path
+    for base in search_bases:
+        dll_dir = find_matching_dir(base)
+        if dll_dir:
+            return dll_dir
 
     return None
 
@@ -61,7 +127,7 @@ def get_jadeui_dll_files(dll_dir: Path) -> list[tuple[Path, str]]:
         文件路径和目标路径的元组列表
     """
     files = []
-    dest_dir = dll_dir.name  # 如 "JadeView-dist_x64"
+    dest_dir = dll_dir.name  # 如 "JadeView_win_x64_static_v0.1.2"
 
     # 包含目录中的所有文件
     for file_path in dll_dir.iterdir():
@@ -110,6 +176,15 @@ def build(
         print(f"错误: 源文件不存在: {source_file}")
         return 1
 
+    # 检查 Nuitka 版本
+    version_ok, nuitka_version = check_nuitka_version()
+    if not version_ok:
+        print(f"ℹ️  提示: 当前 Nuitka 版本 ({nuitka_version})")
+        print(f"   由于官方bug，onefile 模式没有正确打包 VC++ 运行时")
+        print(f"   如需在纯净 Windows 运行，请升级到 Nuitka {NUITKA_RECOMMENDED_VERSION}+ 测试版:")
+        print(f"   pip install -U \"https://github.com/ArcletProject/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip\"")
+        print()
+
     # 源文件所在目录
     source_dir = source_path.parent
 
@@ -151,6 +226,7 @@ def build(
         else:
             print("⚠️  警告: 未找到 JadeUI DLL，打包后的程序可能无法运行")
             print("   请确保已安装 jadeui 库或 DLL 文件存在")
+
 
     # 构建 Nuitka 命令
     cmd = [

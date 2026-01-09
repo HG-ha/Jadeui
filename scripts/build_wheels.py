@@ -39,6 +39,9 @@ DIST_DIR = ROOT_DIR / "dist"
 GITHUB_REPO = "JadeViewDocs/library"
 GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
 
+# 链接类型: "static" (推荐) 或 "dynamic"
+LINK_TYPE = "static"
+
 
 def get_dll_version() -> str:
     """Read DLL_VERSION from jadeui/downloader.py"""
@@ -50,22 +53,32 @@ def get_dll_version() -> str:
     raise RuntimeError("Cannot read DLL_VERSION from jadeui/downloader.py")
 
 
+def get_dist_dir_name(arch: str, version: str) -> str:
+    """Get distribution directory name"""
+    return f"JadeView_win_{arch}_{LINK_TYPE}_v{version}"
+
+
+def get_dll_filename(arch: str) -> str:
+    """Get DLL filename for architecture"""
+    return f"JadeView_{arch}_{LINK_TYPE}.dll"
+
+
 def download_dll(arch: str, version: str) -> bool:
     """Download DLL from GitHub
 
     Args:
-        arch: 'x64' or 'x86'
+        arch: 'x64', 'x86', or 'arm64'
         version: DLL version
 
     Returns:
         True if successful
     """
-    zip_name = f"JadeView-dist_{arch}.zip"
+    zip_name = f"JadeView_win_{arch}_{LINK_TYPE}_v{version}.zip"
     url = f"{GITHUB_RELEASE_URL}/v{version}/{zip_name}"
-    target_dir = ROOT_DIR / f"JadeView-dist_{arch}"
-    dll_name = "JadeView_x64.dll" if arch == "x64" else "JadeView.dll"
+    target_dir = ROOT_DIR / get_dist_dir_name(arch, version)
+    dll_name = get_dll_filename(arch)
 
-    print(f"[*] Downloading {arch} DLL (v{version})...")
+    print(f"[*] Downloading {arch} ({LINK_TYPE}) DLL (v{version})...")
     print(f"    URL: {url}")
 
     try:
@@ -149,19 +162,25 @@ def download_dll(arch: str, version: str) -> bool:
         return False
 
 
-# Architecture config
-ARCH_CONFIG = {
-    "x64": {
-        "src_dir": "JadeView-dist_x64",
-        "wheel_tag": "win_amd64",
-        "dll_name": "JadeView_x64.dll",
-    },
-    "x86": {
-        "src_dir": "JadeView-dist_x86",
-        "wheel_tag": "win32",
-        "dll_name": "JadeView.dll",
-    },
-}
+def get_arch_config(version: str) -> dict:
+    """Get architecture config with version"""
+    return {
+        "x64": {
+            "src_dir": get_dist_dir_name("x64", version),
+            "wheel_tag": "win_amd64",
+            "dll_name": get_dll_filename("x64"),
+        },
+        "x86": {
+            "src_dir": get_dist_dir_name("x86", version),
+            "wheel_tag": "win32",
+            "dll_name": get_dll_filename("x86"),
+        },
+        "arm64": {
+            "src_dir": get_dist_dir_name("arm64", version),
+            "wheel_tag": "win_arm64",
+            "dll_name": get_dll_filename("arm64"),
+        },
+    }
 
 
 def clean():
@@ -186,16 +205,17 @@ def clean():
         shutil.rmtree(p)
 
 
-def prepare_dll(arch: str) -> bool:
+def prepare_dll(arch: str, version: str) -> bool:
     """Prepare DLL files
 
     Args:
-        arch: 'x64' or 'x86'
+        arch: 'x64', 'x86', or 'arm64'
+        version: DLL version
 
     Returns:
         True if successful
     """
-    config = ARCH_CONFIG[arch]
+    config = get_arch_config(version)[arch]
     src_dir = ROOT_DIR / config["src_dir"]
 
     if not src_dir.exists():
@@ -224,16 +244,17 @@ def prepare_dll(arch: str) -> bool:
     return True
 
 
-def build_wheel(arch: str) -> bool:
+def build_wheel(arch: str, version: str) -> bool:
     """Build wheel for specific architecture
 
     Args:
-        arch: 'x64' or 'x86'
+        arch: 'x64', 'x86', or 'arm64'
+        version: DLL version
 
     Returns:
         True if successful
     """
-    config = ARCH_CONFIG[arch]
+    config = get_arch_config(version)[arch]
 
     print(f"\n[*] Building {arch} wheel...")
 
@@ -241,7 +262,7 @@ def build_wheel(arch: str) -> bool:
     if DLL_DIR.exists():
         shutil.rmtree(DLL_DIR)
 
-    if not prepare_dll(arch):
+    if not prepare_dll(arch, version):
         return False
 
     # Build wheel
@@ -330,36 +351,35 @@ def main():
     # Clean first (before downloading DLLs)
     clean()
 
+    # Architectures to build (x86 is optional, uncomment if needed)
+    # 构建的架构列表 (x86 可选，如需支持请取消注释)
+    BUILD_ARCHS = ["x64", "arm64"]  # Add "x86" if 32-bit support needed
+    
     # Check or download DLL
-    has_x64 = (ROOT_DIR / "JadeView-dist_x64").exists()
-    has_x86 = (ROOT_DIR / "JadeView-dist_x86").exists()
+    arch_config = get_arch_config(dll_version)
+    arch_status = {}
+    
+    for arch in BUILD_ARCHS:
+        has_dll = (ROOT_DIR / arch_config[arch]["src_dir"]).exists()
+        if not has_dll:
+            print(f"\n{arch} DLL not found, downloading...")
+            has_dll = download_dll(arch, dll_version)
+        arch_status[arch] = has_dll
 
-    if not has_x64:
-        print("\nx64 DLL not found, downloading...")
-        has_x64 = download_dll("x64", dll_version)
-
-    if not has_x86:
-        print("\nx86 DLL not found, downloading...")
-        has_x86 = download_dll("x86", dll_version)
-
-    if not has_x64 and not has_x86:
+    if not any(arch_status.values()):
         print("\n[ERROR] Cannot obtain DLL files!")
         print(f"\nPlease download DLL manually (v{dll_version}):")
         print(f"  1. Visit https://github.com/{GITHUB_REPO}/releases/tag/v{dll_version}")
-        print("  2. Download JadeView-dist_x64.zip and/or JadeView-dist_x86.zip")
+        print(f"  2. Download JadeView_win_x64_{LINK_TYPE}_v{dll_version}.zip etc.")
         print("  3. Extract to project root directory")
         return 1
 
     print("\nAvailable DLLs:")
-    if has_x64:
-        print("  [OK] x64 (JadeView-dist_x64)")
-    else:
-        print("  [--] x64 not found")
-
-    if has_x86:
-        print("  [OK] x86 (JadeView-dist_x86)")
-    else:
-        print("  [--] x86 not found")
+    for arch in BUILD_ARCHS:
+        if arch_status.get(arch, False):
+            print(f"  [OK] {arch} ({arch_config[arch]['src_dir']})")
+        else:
+            print(f"  [--] {arch} not found")
 
     # Ensure dist directory exists
     DIST_DIR.mkdir(exist_ok=True)
@@ -367,13 +387,10 @@ def main():
     # Build wheels
     success = True
 
-    if has_x64:
-        if not build_wheel("x64"):
-            success = False
-
-    if has_x86:
-        if not build_wheel("x86"):
-            success = False
+    for arch in BUILD_ARCHS:
+        if arch_status.get(arch, False):
+            if not build_wheel(arch, dll_version):
+                success = False
 
     # Build source distribution
     if not build_sdist():

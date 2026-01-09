@@ -23,7 +23,12 @@ GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
 
 # DLL 版本号（可能与 SDK 版本不同）
 # 当 SDK 修复 bug 但 DLL 未更新时，此版本保持不变
-DLL_VERSION = "0.1.1"
+DLL_VERSION = "0.1.2"
+
+# 链接类型: "static" (推荐) 或 "dynamic"
+# static: DLL内嵌所有依赖，无需额外运行时
+# dynamic: 需要 Visual C++ 运行时
+LINK_TYPE = "static"
 
 # 兼容旧代码
 VERSION = DLL_VERSION
@@ -44,32 +49,44 @@ def get_architecture() -> str:
         return "x86"
 
 
-def get_dll_filename(arch: str) -> str:
+def get_dll_filename(arch: str, link_type: str = LINK_TYPE) -> str:
     """Get the DLL filename for the architecture
 
     Args:
-        arch: 'x64' or 'x86'
+        arch: 'x64', 'x86', or 'arm64'
+        link_type: 'static' or 'dynamic'
 
     Returns:
         DLL filename
     """
-    if arch == "x64":
-        return "JadeView_x64.dll"
-    else:
-        return "JadeView.dll"
+    return f"JadeView_{arch}_{link_type}.dll"
 
 
-def get_download_url(version: str, arch: str) -> str:
+def get_dist_dir_name(arch: str, link_type: str = LINK_TYPE) -> str:
+    """Get the distribution directory name
+
+    Args:
+        arch: 'x64', 'x86', or 'arm64'
+        link_type: 'static' or 'dynamic'
+
+    Returns:
+        Distribution directory name
+    """
+    return f"JadeView_win_{arch}_{link_type}_v{DLL_VERSION}"
+
+
+def get_download_url(version: str, arch: str, link_type: str = LINK_TYPE) -> str:
     """Get the download URL for a specific version and architecture
 
     Args:
         version: Version string (e.g., '0.1.0')
-        arch: 'x64' or 'x86'
+        arch: 'x64', 'x86', or 'arm64'
+        link_type: 'static' or 'dynamic'
 
     Returns:
         Download URL
     """
-    zip_name = f"JadeView-dist_{arch}.zip"
+    zip_name = f"JadeView_win_{arch}_{link_type}_v{version}.zip"
     return f"{GITHUB_RELEASE_URL}/v{version}/{zip_name}"
 
 
@@ -99,7 +116,7 @@ def find_dll() -> Optional[Path]:
 
     Search order:
     1. Package internal dll directory (installed with wheel)
-    2. Project root JadeView-dist_{arch} directory
+    2. Project root JadeView_win_{arch}_{link_type}_v{version} directory
     3. Current working directory
     4. User data directory (downloaded DLL)
 
@@ -108,7 +125,7 @@ def find_dll() -> Optional[Path]:
     """
     arch = get_architecture()
     dll_name = get_dll_filename(arch)
-    dist_dir = f"JadeView-dist_{arch}"
+    dist_dir = get_dist_dir_name(arch)
 
     package_dir = Path(__file__).parent
 
@@ -116,11 +133,17 @@ def find_dll() -> Optional[Path]:
     search_paths = [
         # 1. Package internal dll directory (from wheel)
         package_dir / "dll" / dist_dir / dll_name,
-        # 2. Package parent (project root during development)
+        # 2. Package internal lib directory (development)
+        package_dir / "lib" / dist_dir / dll_name,
+        # 3. Project root lib directory (development)
+        package_dir.parent / "lib" / dist_dir / dll_name,
+        # 4. Project root directory
         package_dir.parent / dist_dir / dll_name,
-        # 3. Current working directory
+        # 5. Current working directory
         Path.cwd() / dist_dir / dll_name,
-        # 4. User data directory (downloaded)
+        # 6. Current working directory lib
+        Path.cwd() / "lib" / dist_dir / dll_name,
+        # 7. User data directory (downloaded)
         get_install_dir() / dist_dir / dll_name,
     ]
 
@@ -142,6 +165,7 @@ def find_dll() -> Optional[Path]:
 def download_dll(
     version: Optional[str] = None,
     arch: Optional[str] = None,
+    link_type: Optional[str] = None,
     install_dir: Optional[Path] = None,
     progress_callback: Optional[callable] = None,
 ) -> Path:
@@ -149,7 +173,8 @@ def download_dll(
 
     Args:
         version: Version to download (default: current version)
-        arch: Architecture ('x64' or 'x86', default: auto-detect)
+        arch: Architecture ('x64', 'x86', or 'arm64', default: auto-detect)
+        link_type: Link type ('static' or 'dynamic', default: LINK_TYPE)
         install_dir: Installation directory (default: auto)
         progress_callback: Optional callback for progress updates
             Called with (downloaded_bytes, total_bytes)
@@ -162,15 +187,17 @@ def download_dll(
     """
     version = version or DLL_VERSION
     arch = arch or get_architecture()
+    link_type = link_type or LINK_TYPE
     install_dir = install_dir or get_install_dir()
 
-    url = get_download_url(version, arch)
-    dll_name = get_dll_filename(arch)
-    dist_dir = f"JadeView-dist_{arch}"
+    url = get_download_url(version, arch, link_type)
+    dll_name = get_dll_filename(arch, link_type)
+    dist_dir = get_dist_dir_name(arch, link_type)
 
     print("📦 JadeUI DLL 下载器")
     print(f"   版本: v{version}")
     print(f"   架构: {arch}")
+    print(f"   链接类型: {link_type}")
     print(f"   下载地址: {url}")
     print(f"   安装目录: {install_dir}")
 
@@ -278,9 +305,11 @@ def ensure_dll() -> Path:
         return download_dll()
     except Exception as e:
         print(f"\n❌ 自动下载失败: {e}")
+        arch = get_architecture()
+        zip_name = f"JadeView_win_{arch}_{LINK_TYPE}_v{DLL_VERSION}.zip"
         print("\n请手动下载:")
         print(f"  1. 访问 https://github.com/{GITHUB_REPO}/releases")
-        print(f"  2. 下载 JadeView-dist_{get_architecture()}.zip")
+        print(f"  2. 下载 {zip_name}")
         print(f"  3. 解压到项目目录或 {get_install_dir()}")
         raise RuntimeError(f"无法获取 DLL: {e}")
 
@@ -302,9 +331,16 @@ def cli():
     parser.add_argument(
         "-a",
         "--arch",
-        choices=["x64", "x86"],
+        choices=["x64", "x86", "arm64"],
         default=get_architecture(),
         help=f"架构 (默认: {get_architecture()})",
+    )
+    parser.add_argument(
+        "-l",
+        "--link-type",
+        choices=["static", "dynamic"],
+        default=LINK_TYPE,
+        help=f"链接类型 (默认: {LINK_TYPE})",
     )
     parser.add_argument(
         "-d",
@@ -333,6 +369,7 @@ def cli():
         download_dll(
             version=args.version,
             arch=args.arch,
+            link_type=args.link_type,
             install_dir=args.dir,
         )
         return 0
