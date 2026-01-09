@@ -284,7 +284,8 @@ def build_wheel(arch: str, version: str) -> bool:
         return False
 
     # Rename wheel to include platform tag
-    for whl in DIST_DIR.glob("jadeui-*.whl"):
+    # Only rename 'any' platform wheel (the one just built)
+    for whl in DIST_DIR.glob("jadeui-*-any.whl"):
         # Parse filename
         name = whl.stem
         parts = name.split("-")
