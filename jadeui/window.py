@@ -112,7 +112,7 @@ class Window(EventEmitter):
                 - hide_window (bool): Create hidden (default: False)
                 - use_page_icon (bool): Use page favicon as window icon (default: True)
                 - autoplay (bool): Allow media autoplay (default: False)
-                - disable_right_click (bool): Disable right-click menu (default: False)
+                - disable_right_click (bool): Disable right-click menu (default: True)
                 - user_agent (str): Custom user agent string
                 - preload_js (str): JavaScript to run before page load
         """
@@ -153,7 +153,7 @@ class Window(EventEmitter):
         # WebView settings
         self._options.setdefault("autoplay", False)
         self._options.setdefault("background_throttling", False)
-        self._options.setdefault("disable_right_click", False)
+        self._options.setdefault("disable_right_click", True)
         self._options.setdefault("user_agent", None)
         self._options.setdefault("preload_js", None)
 
