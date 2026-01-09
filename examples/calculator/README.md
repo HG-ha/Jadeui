@@ -18,10 +18,16 @@ python examples/calculator/app.py
 
 ## 打包
 
-在 `examples/calculator` 目录下执行：
+首先安装开发依赖（包含 nuitka）：
 
 ```bash
-python ..\..\scripts\build.py app.py --output calculator
+pip install jadeui[dev]
+```
+
+然后在 `examples/calculator` 目录下执行：
+
+```bash
+python ../../scripts/build.py app.py -o calculator
 ```
 
 脚本会自动包含 `web` 目录和 `web/favicon.png` 图标。

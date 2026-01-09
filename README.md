@@ -62,185 +62,57 @@ app.initialize(
 )
 ```
 
-## 完整示例
+## 示例项目
 
-### 加载本地 HTML
+查看 [examples](./examples) 目录获取完整示例：
 
-```python
-from jadeui import JadeUIApp, Window, LocalServer
+| 示例 | 说明 |
+|------|------|
+| [calculator](./examples/calculator) | 基础计算器，展示窗口创建和 IPC 通信 |
+| [backdrop_demo](./examples/backdrop_demo) | Windows 11 Mica/Acrylic 背景效果 |
+| [router_demo](./examples/router_demo) | 内置路由系统实现多页面应用 |
+| [custom_template](./examples/custom_template) | 自定义 HTML 模板和样式 |
+| [vue_app](./examples/vue_app) | Vue.js + JadeUI 集成示例 |
 
-app = JadeUIApp()
-server = LocalServer()
+### 效果预览
 
-@app.on_ready
-def on_ready():
-    url = server.start("./web", "myapp")
-    
-    window = Window(
-        title="My App",
-        width=1024,
-        height=768,
-        url=f"{url}/index.html",
-        remove_titlebar=True,  # 无边框窗口
-        transparent=True,
-    )
-    window.show()
-    window.set_backdrop("mica")  # Windows 11 效果
+| Calculator | Backdrop | Router |
+|:---:|:---:|:---:|
+| ![Calculator](assets/calculator_iiBxCxUko6.png) | ![Backdrop](assets/backdrop_demo.png) | ![Router](assets/router_demo.png) |
 
-app.run()
-```
-
-### IPC 通信
-
-```python
-from jadeui import JadeUIApp, Window, IPCManager
-
-app = JadeUIApp()
-ipc = IPCManager()
-
-# 注册消息处理器
-@ipc.on("message")
-def handle_message(window_id, message):
-    print(f"收到: {message}")
-    ipc.send(window_id, "reply", f"Echo: {message}")
-    return 1
-
-@app.on_ready
-def on_ready():
-    Window(title="IPC Demo", url="...").show()
-
-app.run()
-```
-
-**前端 JavaScript:**
-
-```javascript
-// 发送消息到 Python (使用 jade.ipcSend)
-jade.ipcSend("message", "Hello from JS!");
-
-// 接收 Python 消息 (使用 jade.ipcMain)
-jade.ipcMain("reply", function(data) {
-    console.log("Python replied:", data);
-});
-```
-
-## 窗口选项
-
-```python
-window = Window(
-    title="My App",
-    width=1024,
-    height=768,
-    url="https://example.com",
-    
-    # 外观
-    remove_titlebar=True,      # 移除标题栏
-    transparent=True,          # 透明背景
-    theme="Dark",              # Light/Dark/System
-    
-    # 大小限制
-    min_width=800,
-    min_height=600,
-    max_width=1920,
-    max_height=1080,
-    resizable=True,
-    
-    # 位置
-    x=100,                     # -1 为居中
-    y=100,
-    
-    # 状态
-    maximized=False,
-    fullscreen=False,
-    always_on_top=False,
-    
-    # WebView
-    autoplay=False,
-    disable_right_click=False,
-    user_agent="Custom UA",
-)
-```
-
-## 窗口方法
-
-```python
-# 显示/隐藏
-window.show()
-window.hide()
-window.close()
-
-# 状态
-window.minimize()
-window.maximize()
-window.restore()
-window.focus()
-window.set_fullscreen(True)
-
-# 属性
-window.set_title("New Title")
-window.set_size(1280, 720)
-window.set_position(100, 100)
-window.center()
-window.set_always_on_top(True)
-
-# 主题
-window.set_theme("Dark")
-window.set_backdrop("mica")  # none/mica/mica_alt/acrylic/tabbed
-
-# WebView
-window.load_url("https://example.com")
-window.execute_js("console.log('Hello!')")
-
-# 状态查询
-window.is_visible
-window.is_maximized
-window.is_minimized
-window.is_focused
-```
+| Custom Template | Vue App |
+|:---:|:---:|
+| ![Custom](assets/custom_demo.png) | ![Vue](assets/vueapp.png) |
 
 ## API 文档
 
 完整文档请访问: https://jade.run/python-sdk
 
-## 示例效果
+## 打包发布
 
-### 计算器
+使用 Nuitka 将应用打包成独立的可执行文件：
 
-简单的计算器示例，展示基本的窗口和 IPC 通信。
+```bash
+# 安装开发依赖
+pip install jadeui[dev]
 
-![Calculator Demo](assets/calculator_iiBxCxUko6.png)
+# 打包为单个exe应用
+python scripts/build.py your_app.py -o your_app
 
-### Backdrop 效果
+# 打包为目录形式，而不是单个exe
+python scripts/build.py your_app.py -o your_app --no-onefile
+```
 
-展示 Windows 11 Mica/Acrylic 背景效果。
+打包脚本会自动包含 JadeView DLL 和 web 目录。更多选项：
 
-![Backdrop Demo](assets/backdrop_demo.png)
-
-### 路由示例
-
-使用内置路由系统实现多页面应用。
-
-![Router Demo](assets/router_demo.png)
-
-### 自定义模板
-
-自定义 CSS 样式的多页面应用示例。
-
-![Custom Template Demo](assets/custom_demo.png)
-
-### Vue 应用
-
-使用 Vue.js 构建的现代前端应用示例。
-
-![Vue App Demo](assets/vueapp.png)
-
-> 更多示例请查看 [examples](./examples) 目录。
+```bash
+python scripts/build.py --help
+```
 
 ## 系统要求
 
 - **操作系统**: Windows 10/11
-- **Python**: 3.10+
-- **依赖**: 无（纯 Python + DLL）
+- **Python**: 3.7+
 
 ## 许可证
 
@@ -250,6 +122,6 @@ MIT License
 
 - [Python SDK 文档](https://jade.run/python-sdk)
 - [JadeView 官网](https://jade.run)
-- [GitHub](https://github.com/ArcletProject/jadeui)
+- [GitHub](https://github.com/HG-ha/Jadeui)
 - [PyPI](https://pypi.org/project/jadeui/)
 

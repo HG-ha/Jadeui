@@ -84,6 +84,7 @@ def build(
     use_upx: bool = False,
     include_jadeui_dll: bool = True,
     compression_level: int = 1,
+    onefile: bool = True,
 ) -> int:
     """
     使用 Nuitka 打包 Python 应用
@@ -99,6 +100,7 @@ def build(
         use_upx: 是否使用 UPX 压缩
         include_jadeui_dll: 是否自动包含 jadeui DLL
         compression_level: 压缩级别 0-3（0=不压缩, 1=基础, 2=中等, 3=最大压缩）
+        onefile: 是否打包为单个可执行文件（默认 True）
 
     Returns:
         子进程的返回码
@@ -156,15 +158,18 @@ def build(
         "-m",
         "nuitka",
         "--standalone",
-        "--onefile",
         f"--output-dir={output_dir}",
-        f"--output-filename={output_name}.exe",
         "--remove-output",
         "--assume-yes-for-downloads",
         "--show-progress",
         # 排除不必要的模块
         "--nofollow-import-to=pytest,unittest,setuptools,pip,wheel,distutils",
     ]
+
+    # 单文件模式
+    if onefile:
+        cmd.append("--onefile")
+        cmd.append(f"--output-filename={output_name}.exe")
 
     # 根据压缩级别添加优化选项
     if compression_level >= 1:
@@ -227,7 +232,11 @@ def build(
     print("=" * 60)
     print(f"源文件: {source_file}")
     print(f"输出目录: {output_dir}")
-    print(f"输出文件: {output_name}.exe")
+    if onefile:
+        print(f"输出文件: {output_name}.exe")
+    else:
+        print(f"输出目录: {output_dir}/{output_name}.dist/")
+    print(f"打包模式: {'单文件 (onefile)' if onefile else '目录 (standalone)'}")
     print(f"压缩级别: {compression_level} - {compression_desc.get(compression_level, '未知')}")
     if icon:
         print(f"图标: {icon}")
@@ -252,11 +261,12 @@ def main():
         formatter_class=argparse.RawDescriptionHelpFormatter,
         epilog="""
 示例:
-  python build.py app.py                    # 最简单的打包（默认压缩级别1）
+  python build.py app.py                    # 最简单的打包（默认单文件+压缩级别1）
   python build.py app.py -c 2               # 中等压缩（推荐）
   python build.py app.py -c 3               # 最大压缩
   python build.py app.py --output MyApp     # 指定输出文件名
   python build.py app.py --icon custom.ico  # 使用自定义图标
+  python build.py app.py --no-onefile       # 打包为目录而非单文件
   python build.py app.py --include-data-dir assets=assets  # 添加额外目录
 
 压缩级别说明:
@@ -336,6 +346,12 @@ def main():
         help="压缩级别 0-3（0=不压缩, 1=基础LTO, 2=移除文档/断言, 3=最大压缩+UPX）默认: 1",
     )
 
+    parser.add_argument(
+        "--no-onefile",
+        action="store_true",
+        help="不打包为单个可执行文件，而是生成目录（默认打包为单文件）",
+    )
+
     args = parser.parse_args()
 
     result = build(
@@ -349,6 +365,7 @@ def main():
         use_upx=args.upx,
         include_jadeui_dll=not args.no_jadeui_dll,
         compression_level=args.compress,
+        onefile=not args.no_onefile,
     )
 
     sys.exit(result)

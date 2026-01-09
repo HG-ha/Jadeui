@@ -16,8 +16,16 @@ python app.py
 
 ## 打包
 
+首先安装开发依赖（包含 nuitka）：
+
 ```bash
-python ..\..\scripts\build.py app.py --output custom_template
+pip install jadeui[dev]
+```
+
+然后在 `examples/custom_template` 目录下执行：
+
+```bash
+python ../../scripts/build.py app.py -o custom
 ```
 
 ## 文件结构

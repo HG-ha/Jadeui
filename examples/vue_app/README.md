@@ -41,6 +41,20 @@ cd ..
 python app.py
 ```
 
+### 4. 打包
+
+首先安装开发依赖（包含 nuitka）：
+
+```bash
+pip install jadeui[dev]
+```
+
+然后在 `examples/vue_app` 目录下执行：
+
+```bash
+python ../../scripts/build.py app.py -o vueapp
+```
+
 ## 开发模式
 
 如果需要热重载开发：
