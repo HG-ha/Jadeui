@@ -10,13 +10,13 @@ from .types import (
     RGBA,
     AppReadyCallback,
     FileDropCallback,
+    GenericWindowEventCallback,
     IpcCallback,
     PageLoadCallback,
     WebViewSettings,
     WebViewWindowOptions,
     WindowAllClosedCallback,
     WindowEventCallback,
-    GenericWindowEventCallback,
 )
 
 __all__ = [
