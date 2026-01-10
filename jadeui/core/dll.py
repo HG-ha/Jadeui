@@ -278,6 +278,11 @@ class DLLManager:
             [ctypes.c_uint32, ctypes.c_char_p],
             ctypes.c_int,
         )
+        self._try_bind(
+            "reload",
+            [ctypes.c_uint32],
+            ctypes.c_int,
+        )
 
         # Event system
         self._try_bind("jade_off", [ctypes.c_char_p], None)

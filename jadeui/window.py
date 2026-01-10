@@ -248,13 +248,23 @@ class Window(EventEmitter):
         # 创建 ctypes 回调
         @GenericWindowEventCallback
         def event_callback(window_id: int, json_data: bytes) -> int:
+            result = 0
             try:
                 data_str = json_data.decode("utf-8") if json_data else "{}"
                 logger.debug(f"Event {event}: window={window_id}, data={data_str}")
-                self.emit(event, data_str)
+                # 调用所有监听器，收集返回值（用于阻止事件）
+                for cb in list(self._listeners.get(event, [])):
+                    try:
+                        ret = cb(data_str)
+                        # 如果任何回调返回 True 或 1，则阻止事件
+                        # 适用于: window-closing, webview-new-window
+                        if ret is True or ret == 1:
+                            result = 1
+                    except Exception as e:
+                        logger.error(f"Error in {event} callback: {e}")
             except Exception as e:
-                logger.error(f"Error in {event} callback: {e}")
-            return 0
+                logger.error(f"Error in {event} event handler: {e}")
+            return result
 
         # 保存引用防止垃圾回收
         self._callbacks.append(event_callback)
@@ -747,6 +757,29 @@ class Window(EventEmitter):
             Self for chaining
         """
         return self.execute_js(script)
+
+    def reload(self) -> "Window":
+        """Reload the current page in the WebView
+
+        Reloads the current page content, equivalent to browser's refresh button.
+
+        Note:
+            Requires JadeView DLL version 0.2 or above.
+
+        Returns:
+            Self for chaining
+        """
+        if self.id is not None:
+            self.dll_manager.reload(self.id)
+        return self
+
+    def refresh(self) -> "Window":
+        """Refresh the current page (alias for reload)
+
+        Returns:
+            Self for chaining
+        """
+        return self.reload()
 
     # ==================== State Queries ====================
 

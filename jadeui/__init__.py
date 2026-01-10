@@ -67,7 +67,7 @@ from .router import Router
 from .server import LocalServer
 from .window import Backdrop, Theme, Window
 
-__version__ = "0.1.6"
+__version__ = "0.1.7"
 __author__ = "JadeView Team"
 __license__ = "MIT"
 
