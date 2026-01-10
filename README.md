@@ -101,15 +101,6 @@ pip install jadeui[dev]
 
 # 打包为单个exe应用
 python scripts/build.py your_app.py -o your_app
-
-# 打包为目录形式，而不是单个exe
-python scripts/build.py your_app.py -o your_app --no-onefile
-```
-
-打包脚本会自动包含 JadeView DLL 和 web 目录。更多选项：
-
-```bash
-python scripts/build.py --help
 ```
 
 ## 系统要求

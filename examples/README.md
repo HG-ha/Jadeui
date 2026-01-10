@@ -25,11 +25,7 @@ Window(title="My App", url="https://example.com").run()
 
 ```bash
 # 最简示例
-python examples/simple/app_local.py
-
-# 其他示例
-cd examples/<示例名>
-python app.py
+python examples/simple/app.py
 ```
 
 ## 使用模式对比

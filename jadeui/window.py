@@ -171,27 +171,27 @@ class Window(EventEmitter):
     # 参考: https://jade.run/guides/events/event-types
     JADE_ON_EVENTS = {
         # 窗口事件
-        "window-resized",      # {"width": 宽度, "height": 高度}
-        "window-moved",        # {"x": x坐标, "y": y坐标}
+        "window-resized",  # {"width": 宽度, "height": 高度}
+        "window-moved",  # {"x": x坐标, "y": y坐标}
         "window-state-changed",  # {"isMaximized": 布尔值}
-        "window-focused",      # {}
-        "window-blurred",      # {}
-        "window-closing",      # {} - 可返回 1 阻止关闭
-        "window-created",      # {}
-        "window-closed",       # {}
-        "window-destroyed",    # {}
-        "resized",             # "宽度,高度" (旧兼容格式)
+        "window-focused",  # {}
+        "window-blurred",  # {}
+        "window-closing",  # {} - 可返回 1 阻止关闭
+        "window-created",  # {}
+        "window-closed",  # {}
+        "window-destroyed",  # {}
+        "resized",  # "宽度,高度" (旧兼容格式)
         # WebView 事件
-        "webview-will-navigate",      # {"url": "目标URL", "window_id": 窗口ID}
+        "webview-will-navigate",  # {"url": "目标URL", "window_id": 窗口ID}
         "webview-did-start-loading",  # {"url": "加载URL", "window_id": 窗口ID}
-        "webview-did-finish-load",    # {"url": "加载URL", "window_id": 窗口ID}
-        "webview-new-window",         # {"url": "新窗口URL", "frame_name": "_blank"}
-        "webview-page-title-updated", # {"title": "新标题", "window_id": 窗口ID}
+        "webview-did-finish-load",  # {"url": "加载URL", "window_id": 窗口ID}
+        "webview-new-window",  # {"url": "新窗口URL", "frame_name": "_blank"}
+        "webview-page-title-updated",  # {"title": "新标题", "window_id": 窗口ID}
         "webview-page-icon-updated",  # JSON对象
-        "favicon-updated",            # {"favicon": "图标URL"}
+        "favicon-updated",  # {"favicon": "图标URL"}
         # 其他事件
-        "theme-changed",       # {}
-        "javascript-result",   # {"callbackId": 回调ID, "result": 执行结果}
+        "theme-changed",  # {}
+        "javascript-result",  # {"callbackId": 回调ID, "result": 执行结果}
     }
 
     def on(self, event: str, callback: Optional[Callable[..., Any]] = None) -> Callable[..., Any]:
@@ -210,9 +210,11 @@ class Window(EventEmitter):
         # file-drop 有特殊的回调签名，单独处理
         if event == "file-drop":
             if callback is None:
+
                 def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
                     self._register_file_drop_handler(fn)
                     return fn
+
                 return decorator
             else:
                 self._register_file_drop_handler(callback)
@@ -221,9 +223,11 @@ class Window(EventEmitter):
         # 其他需要通过 jade_on 注册的事件
         if event in self.JADE_ON_EVENTS:
             if callback is None:
+
                 def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
                     self._register_jade_on_event(event, fn)
                     return fn
+
                 return decorator
             else:
                 self._register_jade_on_event(event, callback)
@@ -289,7 +293,6 @@ class Window(EventEmitter):
 
         self._registered_jade_events.add("file-drop")
         logger.info("file-drop event handler registered with DLL")
-
 
     # ==================== Window Lifecycle ====================
 
@@ -390,6 +393,8 @@ class Window(EventEmitter):
             # 使用指定的 web 目录
             if not os.path.isabs(web_dir):
                 web_dir = os.path.join(caller_dir, web_dir)
+            if not os.path.isdir(web_dir):
+                raise ValueError(f"web 目录不存在: {web_dir}")
             server = LocalServer()
             server_url = server.start("app", web_dir)
             self._url = f"{server_url}/{entry}"
@@ -400,6 +405,11 @@ class Window(EventEmitter):
                 server = LocalServer()
                 server_url = server.start("app", auto_web_dir)
                 self._url = f"{server_url}/{entry}"
+            else:
+                raise ValueError(
+                    f"未指定 url 或 web_dir，且未在 {caller_dir} 下找到 web 目录。\n"
+                    "请指定 url 或 web_dir 参数，或在脚本同级目录创建 web 文件夹。"
+                )
 
         # Get or create JadeUIApp instance
         app = JadeUIApp.get_instance()
@@ -957,7 +967,6 @@ class Window(EventEmitter):
         except Exception as e:
             logger.error(f"Error parsing file drop data: {e}")
             self.emit("file-drop", [], 0, 0)
-
 
     # ==================== Static Methods ====================
 
