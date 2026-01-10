@@ -164,6 +164,9 @@ class Window(EventEmitter):
         # 通过 jade_on 注册的事件标志
         self._registered_jade_events: set[str] = set()
 
+        # 待应用的设置（在窗口创建前设置的属性）
+        self._pending_backdrop: Optional[str] = None
+
     # 需要通过 jade_on 注册到 DLL 的事件列表
     # 参考: https://jade.run/guides/events/event-types
     JADE_ON_EVENTS = {
@@ -332,6 +335,106 @@ class Window(EventEmitter):
     def destroy(self) -> None:
         """Force destroy the window (alias for close)"""
         self.close()
+
+    def run(
+        self,
+        url: Optional[str] = None,
+        web_dir: Optional[str] = None,
+        entry: str = "index.html",
+        enable_dev_tools: bool = False,
+    ) -> None:
+        """Run the window with automatic app initialization
+
+        This is a convenience method for simple single-window applications.
+        It automatically initializes JadeUIApp if needed, shows the window,
+        and runs the message loop.
+
+        Also registers default IPC handlers for window actions (close, minimize, maximize).
+
+        Args:
+            url: URL to load (takes precedence over web_dir)
+            web_dir: Local web directory path. If provided, automatically starts
+                    a local server. Can be:
+                    - Absolute path: "C:/myapp/web"
+                    - Relative path: "web" (relative to caller's directory)
+                    - None: auto-detect "web" folder in caller's directory
+            entry: Entry HTML file when using web_dir (default: "index.html")
+            enable_dev_tools: Whether to enable developer tools (F12)
+
+        Example:
+            # Simplest - auto-detect web folder
+            from jadeui import Window
+            Window(title="My App").run()
+
+            # With explicit web directory
+            Window(title="My App").run(web_dir="web")
+
+            # With remote URL
+            Window(title="My App").run(url="https://example.com")
+        """
+        import inspect
+        import os
+
+        from .app import JadeUIApp
+        from .ipc import IPCManager
+        from .server import LocalServer
+
+        # 获取调用者的目录
+        caller_frame = inspect.stack()[1]
+        caller_dir = os.path.dirname(os.path.abspath(caller_frame.filename))
+
+        # 处理 web_dir 和 url
+        if url:
+            self._url = url
+        elif web_dir is not None:
+            # 使用指定的 web 目录
+            if not os.path.isabs(web_dir):
+                web_dir = os.path.join(caller_dir, web_dir)
+            server = LocalServer()
+            server_url = server.start("app", web_dir)
+            self._url = f"{server_url}/{entry}"
+        elif self._url is None:
+            # 自动检测 web 目录
+            auto_web_dir = os.path.join(caller_dir, "web")
+            if os.path.isdir(auto_web_dir):
+                server = LocalServer()
+                server_url = server.start("app", auto_web_dir)
+                self._url = f"{server_url}/{entry}"
+
+        # Get or create JadeUIApp instance
+        app = JadeUIApp.get_instance()
+        if app is None:
+            app = JadeUIApp()
+
+        # Initialize if not already initialized
+        if not app._initialized:
+            app.initialize(enable_dev_tools=enable_dev_tools)
+
+        # 注册默认的窗口操作 IPC 处理器
+        ipc = IPCManager()
+
+        @ipc.on("windowAction")
+        def _handle_window_action(window_id: int, action: str) -> int:
+            win = Window.get_window_by_id(window_id)
+            if win:
+                if action == "close":
+                    win.close()
+                elif action == "minimize":
+                    win.minimize()
+                elif action == "maximize":
+                    win.maximize()
+            return 1
+
+        # 保存 window 引用，在 on_ready 中显示
+        window = self
+
+        # 注册 on_ready 回调来显示窗口
+        @app.on_ready
+        def _show_window():
+            window.show()
+
+        # Run message loop
+        app.run()
 
     def focus(self) -> "Window":
         """Focus the window
@@ -579,6 +682,9 @@ class Window(EventEmitter):
         """
         if self.id is not None:
             self.dll_manager.set_window_backdrop(self.id, backdrop.encode("utf-8"))
+        else:
+            # 保存设置，在窗口创建后应用
+            self._pending_backdrop = backdrop
         return self
 
     # ==================== WebView Operations ====================
@@ -752,9 +858,11 @@ class Window(EventEmitter):
             if theme:
                 self.dll_manager.set_window_theme(self.id, theme)
 
-            backdrop = self._options.get("backdrop")
+            # 应用 backdrop（优先使用 set_backdrop 设置的值）
+            backdrop = self._pending_backdrop or self._options.get("backdrop")
             if backdrop:
                 self.dll_manager.set_window_backdrop(self.id, backdrop.encode("utf-8"))
+                self._pending_backdrop = None  # 清除待处理设置
 
             # Set up event handlers
             self._setup_event_handlers()

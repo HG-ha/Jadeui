@@ -5,41 +5,31 @@ A Python SDK for creating desktop applications using JadeView's WebView technolo
 Provides a clean, object-oriented API for window management, IPC communication,
 and web frontend integration.
 
-Example:
+Quick Start (simplest):
+    from jadeui import Window
+
+    Window(title="My App", url="https://example.com").run()
+
+Local App (auto-detect web folder):
+    from jadeui import Window
+
+    Window(title="My App").run()  # Loads web/index.html
+
+Full Mode (multi-window, events):
     from jadeui import JadeUIApp, Window
 
     app = JadeUIApp()
 
     @app.on_ready
     def on_ready():
-        window = Window(
-            title="My App",
-            width=1024,
-            height=768,
-            url="https://example.com"
-        )
-        window.show()
+        Window(title="Window 1", url="https://example.com").show()
+        Window(title="Window 2", url="https://google.com").show()
 
     app.run()
 
-Example with local server:
-    from jadeui import JadeUIApp, Window, LocalServer
+With IPC:
+    from jadeui import IPCManager, Window
 
-    app = JadeUIApp()
-    server = LocalServer()
-
-    @app.on_ready
-    def on_ready():
-        url = server.start("./web", "myapp")
-        window = Window(title="My App", url=f"{url}/index.html")
-        window.show()
-
-    app.run()
-
-Example with IPC:
-    from jadeui import JadeUIApp, Window, IPCManager
-
-    app = JadeUIApp()
     ipc = IPCManager()
 
     @ipc.on("message")
@@ -48,12 +38,7 @@ Example with IPC:
         ipc.send(window_id, "message", f"Echo: {message}")
         return 1
 
-    @app.on_ready
-    def on_ready():
-        window = Window(title="IPC Demo", url="...")
-        window.show()
-
-    app.run()
+    Window(title="IPC Demo").run(web_dir="web")
 """
 
 from . import utils

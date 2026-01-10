@@ -50,10 +50,8 @@ def save_data(window_id, data):
 def on_ready():
     print("应用已就绪")
 
-    # web 目录是 Vue 构建输出目录
-    web_dir = os.path.join(os.path.dirname(__file__), "web")
-
     # 检查是否已构建
+    web_dir = os.path.join(os.path.dirname(__file__), "web")
     if not os.path.exists(os.path.join(web_dir, "index.html")):
         print("错误: 请先构建 Vue 前端！")
         print("  cd frontend")
@@ -61,9 +59,10 @@ def on_ready():
         print("  npm run build")
         return
 
+    # web_dir 自动解析相对路径
     router.mount(
         title="JadeUI + Vue",
-        web_dir=web_dir,
+        web_dir="web",
         template="index.html",  # Vue 入口
         width=1000,
         height=700,

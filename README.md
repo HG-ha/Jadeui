@@ -33,6 +33,24 @@ pip install jadeui
 
 ## 快速开始
 
+### 最简模式
+
+```python
+from jadeui import Window
+
+Window(title="Hello JadeUI", url="https://example.com").run()
+```
+
+### 本地应用（自动检测 web 目录）
+
+```python
+from jadeui import Window
+
+Window(title="My App").run()  # 自动加载 web/index.html
+```
+
+### 完整模式（多窗口、全局事件）
+
 ```python
 from jadeui import JadeUIApp, Window
 
@@ -40,11 +58,8 @@ app = JadeUIApp()
 
 @app.on_ready
 def on_ready():
-    window = Window(
-        title="Hello JadeUI",
-        url="https://example.com"
-    )
-    window.show()
+    Window(title="Window 1", url="https://example.com").show()
+    Window(title="Window 2", url="https://google.com").show()
 
 app.run()
 ```
@@ -55,6 +70,7 @@ app.run()
 
 | 示例 | 说明 |
 |------|------|
+| [simple](./examples/simple) | **最简示例** - 几行代码创建应用 |
 | [calculator](./examples/calculator) | 基础计算器，展示窗口创建和 IPC 通信 |
 | [backdrop_demo](./examples/backdrop_demo) | Windows 11 Mica/Acrylic 背景效果 |
 | [router_demo](./examples/router_demo) | 内置路由系统实现多页面应用 |
@@ -63,13 +79,13 @@ app.run()
 
 ### 效果预览
 
-| Calculator | Backdrop | Router |
+| Simple | Calculator | Backdrop |
 |:---:|:---:|:---:|
-| ![Calculator](assets/calculator_iiBxCxUko6.png) | ![Backdrop](assets/backdrop_demo.png) | ![Router](assets/router_demo.png) |
+| ![Simple](assets/simple.png) | ![Calculator](assets/calculator_iiBxCxUko6.png) | ![Backdrop](assets/backdrop_demo.png) |
 
-| Custom Template | Vue App |
-|:---:|:---:|
-| ![Custom](assets/custom_demo.png) | ![Vue](assets/vueapp.png) |
+| Router | Custom Template | Vue App |
+|:---:|:---:|:---:|
+| ![Router](assets/router_demo.png) | ![Custom](assets/custom_demo.png) | ![Vue](assets/vueapp.png) |
 
 ## API 文档
 

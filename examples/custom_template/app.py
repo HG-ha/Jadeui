@@ -43,12 +43,10 @@ def get_products(window_id, data):
 def on_ready():
     print("应用已就绪")
 
-    web_dir = os.path.join(os.path.dirname(__file__), "web")
-
-    # 使用自定义模板！
+    # 使用自定义模板！（web_dir 自动解析相对路径）
     router.mount(
         title="Custom Template Demo",
-        web_dir=web_dir,
+        web_dir="web",
         template="index.html",  # ← 使用自定义模板
         width=900,
         height=600,

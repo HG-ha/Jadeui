@@ -11,8 +11,6 @@ JadeUI 计算器示例 - 最小化实现
     python examples/calculator/app.py
 """
 
-import os
-
 from jadeui import Backdrop, IPCManager, JadeUIApp, LocalServer, Theme, Window
 
 
@@ -59,9 +57,8 @@ def main():
     # 应用准备就绪
     @app.on_ready
     def on_ready():
-        # 启动服务器
-        web_dir = os.path.join(os.path.dirname(__file__), "web")
-        url = server.start(web_dir, "calculator")
+        # 启动服务器（自动解析相对路径）
+        url = server.start("calculator")
         print(f"✅ 服务器: {url}")
 
         # 创建窗口

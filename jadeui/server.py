@@ -41,12 +41,14 @@ class LocalServer:
         self._url: Optional[str] = None
         self._running = False
 
-    def start(self, root_path: str, app_name: str = "app") -> str:
+    def start(self, app_name: str = "app", root_path: str = "web") -> str:
         """Start the local server
 
         Args:
-            root_path: Root directory to serve files from
             app_name: Application name identifier
+            root_path: Root directory to serve files from.
+                      If relative, resolved relative to the caller's directory.
+                      Default: "web"
 
         Returns:
             Server URL if successful, file:// URL as fallback
@@ -54,7 +56,21 @@ class LocalServer:
         Raises:
             ServerError: If server creation fails and fallback is not available
         """
+        import inspect
         import os
+
+        # 如果是相对路径，相对于调用者目录解析
+        if not os.path.isabs(root_path):
+            # 遍历调用栈找到第一个不是 jadeui 包内的文件
+            jadeui_dir = os.path.dirname(__file__)
+            caller_dir = None
+            for frame_info in inspect.stack()[1:]:
+                frame_file = os.path.abspath(frame_info.filename)
+                if not frame_file.startswith(jadeui_dir):
+                    caller_dir = os.path.dirname(frame_file)
+                    break
+            if caller_dir:
+                root_path = os.path.join(caller_dir, root_path)
 
         if not os.path.exists(root_path):
             raise ServerError(f"Root path does not exist: {root_path}")

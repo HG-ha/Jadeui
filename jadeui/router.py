@@ -202,6 +202,21 @@ class Router:
                     例如: ["https://cdn.jsdelivr.net/npm/bootstrap@5/dist/js/bootstrap.bundle.min.js"]
             **window_options: 其他窗口选项
         """
+        import inspect
+
+        # 如果是相对路径，相对于调用者目录解析
+        if not os.path.isabs(web_dir):
+            # 遍历调用栈找到第一个不是 jadeui 包内的文件
+            jadeui_dir = os.path.dirname(__file__)
+            caller_dir = None
+            for frame_info in inspect.stack()[1:]:
+                frame_file = os.path.abspath(frame_info.filename)
+                if not frame_file.startswith(jadeui_dir):
+                    caller_dir = os.path.dirname(frame_file)
+                    break
+            if caller_dir:
+                web_dir = os.path.join(caller_dir, web_dir)
+
         self._web_dir = os.path.abspath(web_dir)
         self._theme = theme
         self._initial_path = initial_path
@@ -226,7 +241,7 @@ class Router:
             entry_file = "_app.html"
 
         # 启动服务器
-        url = self.server.start(self._web_dir, "router")
+        url = self.server.start("router", self._web_dir)
         logger.info(f"路由器服务启动: {url}")
 
         # 设置窗口选项

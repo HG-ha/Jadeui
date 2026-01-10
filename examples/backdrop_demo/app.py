@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from jadeui import JadeUIApp, Window
+from jadeui import JadeUIApp, Window, Events
 from jadeui.ipc import IPCManager
 from jadeui.server import LocalServer
 from jadeui.window import Backdrop, Theme
@@ -70,8 +70,8 @@ def on_ready():
     global window
     print("背景材料演示启动")
 
-    web_dir = os.path.join(os.path.dirname(__file__), "web")
-    url = server.start(web_dir, "backdrop_demo")
+    # 自动解析相对路径
+    url = server.start("backdrop_demo")
 
     window = Window(
         title="背景材料演示",
@@ -84,7 +84,7 @@ def on_ready():
     )
 
     # 监听文件拖放事件
-    @window.on("file-drop")
+    @window.on(Events.FILE_DROP)
     def on_file_drop(files, x, y):
         """处理文件拖放事件
 

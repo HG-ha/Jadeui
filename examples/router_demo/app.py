@@ -3,10 +3,6 @@ JadeUI 后端主导路由示例
 """
 
 import json
-import os
-import sys
-
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
 from jadeui import Events, JadeUIApp, Router
 
@@ -106,12 +102,11 @@ def on_ready():
     """应用就绪后"""
     print("应用已就绪")
 
-    web_dir = os.path.join(os.path.dirname(__file__), "web")
-
     # mount 会自动导航到 initial_path (默认 "/")
+    # web_dir 自动解析相对路径
     window = router.mount(
         title="JadeUI Demo",
-        web_dir=web_dir,
+        web_dir="web",
         width=1100,
         height=750,
         sidebar_width=200,

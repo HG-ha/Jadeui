@@ -99,7 +99,6 @@ body {
     height: var(--titlebar-height);
     display: flex;
     align-items: center;
-    justify-content: space-between;
     padding: 0 12px;
     background: var(--bg-primary);
     -webkit-app-region: drag;
@@ -107,10 +106,18 @@ body {
     border-bottom: 1px solid var(--border);
 }
 
+.titlebar-icon {
+    width: 16px;
+    height: 16px;
+    margin-right: 8px;
+    object-fit: contain;
+}
+
 .titlebar-title {
     font-size: 12px;
     font-weight: 400;
     color: var(--text-secondary);
+    flex: 1;
 }
 
 .titlebar-controls {
@@ -210,6 +217,27 @@ body {
 .sidebar-footer {
     padding: 12px;
     border-top: 1px solid var(--border);
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.backdrop-switcher {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.backdrop-switcher label {
+    font-size: 11px;
+    color: var(--text-muted);
+    flex-shrink: 0;
+}
+
+.backdrop-switcher select {
+    flex: 1;
+    padding: 5px 8px;
+    font-size: 11px;
 }
 
 .theme-switcher {
