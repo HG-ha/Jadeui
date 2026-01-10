@@ -16,6 +16,7 @@ from .types import (
     WebViewWindowOptions,
     WindowAllClosedCallback,
     WindowEventCallback,
+    GenericWindowEventCallback,
 )
 
 __all__ = [
@@ -30,4 +31,5 @@ __all__ = [
     "AppReadyCallback",
     "IpcCallback",
     "WindowAllClosedCallback",
+    "GenericWindowEventCallback",
 ]

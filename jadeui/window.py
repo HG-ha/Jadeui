@@ -14,6 +14,7 @@ from .core import DLLManager
 from .core.types import (
     RGBA,
     FileDropCallback,
+    GenericWindowEventCallback,
     PageLoadCallback,
     WebViewSettings,
     WebViewWindowOptions,
@@ -160,13 +161,41 @@ class Window(EventEmitter):
         # Callback references to prevent garbage collection
         self._callbacks: list = []
 
-        # file-drop 事件是否已注册
-        self._file_drop_registered = False
+        # 通过 jade_on 注册的事件标志
+        self._registered_jade_events: set[str] = set()
+
+    # 需要通过 jade_on 注册到 DLL 的事件列表
+    # 参考: https://jade.run/guides/events/event-types
+    JADE_ON_EVENTS = {
+        # 窗口事件
+        "window-resized",      # {"width": 宽度, "height": 高度}
+        "window-moved",        # {"x": x坐标, "y": y坐标}
+        "window-state-changed",  # {"isMaximized": 布尔值}
+        "window-focused",      # {}
+        "window-blurred",      # {}
+        "window-closing",      # {} - 可返回 1 阻止关闭
+        "window-created",      # {}
+        "window-closed",       # {}
+        "window-destroyed",    # {}
+        "resized",             # "宽度,高度" (旧兼容格式)
+        # WebView 事件
+        "webview-will-navigate",      # {"url": "目标URL", "window_id": 窗口ID}
+        "webview-did-start-loading",  # {"url": "加载URL", "window_id": 窗口ID}
+        "webview-did-finish-load",    # {"url": "加载URL", "window_id": 窗口ID}
+        "webview-new-window",         # {"url": "新窗口URL", "frame_name": "_blank"}
+        "webview-page-title-updated", # {"title": "新标题", "window_id": 窗口ID}
+        "webview-page-icon-updated",  # JSON对象
+        "favicon-updated",            # {"favicon": "图标URL"}
+        # 其他事件
+        "theme-changed",       # {}
+        "javascript-result",   # {"callbackId": 回调ID, "result": 执行结果}
+    }
 
     def on(self, event: str, callback: Optional[Callable[..., Any]] = None) -> Callable[..., Any]:
         """Register an event listener
 
-        Special handling for 'file-drop' event which requires DLL registration.
+        Automatically registers events with DLL via jade_on when needed.
+        Supported events: https://jade.run/guides/events/event-types
 
         Args:
             event: Event name to listen for
@@ -175,21 +204,62 @@ class Window(EventEmitter):
         Returns:
             The callback function (for decorator usage)
         """
+        # file-drop 有特殊的回调签名，单独处理
         if event == "file-drop":
-            # file-drop 需要通过 jade_on 注册到 DLL
             if callback is None:
-                # Used as decorator
                 def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
                     self._register_file_drop_handler(fn)
                     return fn
-
                 return decorator
             else:
                 self._register_file_drop_handler(callback)
                 return callback
-        else:
-            # 其他事件使用父类的 on 方法
-            return super().on(event, callback)
+
+        # 其他需要通过 jade_on 注册的事件
+        if event in self.JADE_ON_EVENTS:
+            if callback is None:
+                def decorator(fn: Callable[..., Any]) -> Callable[..., Any]:
+                    self._register_jade_on_event(event, fn)
+                    return fn
+                return decorator
+            else:
+                self._register_jade_on_event(event, callback)
+                return callback
+
+        # 其他事件使用父类的 on 方法
+        return super().on(event, callback)
+
+    def _register_jade_on_event(self, event: str, callback: Callable[..., Any]) -> None:
+        """通用的 jade_on 事件注册器"""
+        # 添加到本地监听器
+        self._listeners[event].append(callback)
+
+        # 只注册一次到 DLL
+        if event in self._registered_jade_events:
+            return
+
+        # 创建 ctypes 回调
+        @GenericWindowEventCallback
+        def event_callback(window_id: int, json_data: bytes) -> int:
+            try:
+                data_str = json_data.decode("utf-8") if json_data else "{}"
+                logger.debug(f"Event {event}: window={window_id}, data={data_str}")
+                self.emit(event, data_str)
+            except Exception as e:
+                logger.error(f"Error in {event} callback: {e}")
+            return 0
+
+        # 保存引用防止垃圾回收
+        self._callbacks.append(event_callback)
+
+        # 通过 jade_on 注册到 DLL
+        self.dll_manager.jade_on(
+            event.encode("utf-8"),
+            ctypes.cast(event_callback, ctypes.c_void_p),
+        )
+
+        self._registered_jade_events.add(event)
+        logger.info(f"{event} event handler registered with DLL")
 
     def _register_file_drop_handler(self, callback: Callable[..., Any]) -> None:
         """注册 file-drop 事件处理器到 DLL"""
@@ -197,7 +267,7 @@ class Window(EventEmitter):
         self._listeners["file-drop"].append(callback)
 
         # 只注册一次到 DLL
-        if self._file_drop_registered:
+        if "file-drop" in self._registered_jade_events:
             return
 
         # 创建 ctypes 回调
@@ -214,8 +284,9 @@ class Window(EventEmitter):
             ctypes.cast(file_drop_callback, ctypes.c_void_p),
         )
 
-        self._file_drop_registered = True
+        self._registered_jade_events.add("file-drop")
         logger.info("file-drop event handler registered with DLL")
+
 
     # ==================== Window Lifecycle ====================
 
@@ -778,6 +849,7 @@ class Window(EventEmitter):
         except Exception as e:
             logger.error(f"Error parsing file drop data: {e}")
             self.emit("file-drop", [], 0, 0)
+
 
     # ==================== Static Methods ====================
 

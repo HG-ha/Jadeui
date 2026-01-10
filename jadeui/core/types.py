@@ -19,6 +19,16 @@ FileDropCallback = ctypes.CFUNCTYPE(
     ctypes.c_uint32,
     ctypes.c_char_p,
 )
+
+# 通用窗口事件回调：window_id, json_data
+# 用于通过 jade_on 注册的事件，如 window-resized, window-moved 等
+# window-resized 格式: {"width": 宽度, "height": 高度}
+# window-moved 格式: {"x": x坐标, "y": y坐标}
+GenericWindowEventCallback = ctypes.CFUNCTYPE(
+    ctypes.c_int,
+    ctypes.c_uint32,
+    ctypes.c_char_p,
+)
 AppReadyCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
 IpcCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32, ctypes.c_char_p)
 WindowAllClosedCallback = ctypes.CFUNCTYPE(ctypes.c_int)

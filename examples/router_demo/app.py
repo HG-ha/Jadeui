@@ -8,7 +8,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from jadeui import JadeUIApp, Router
+from jadeui import Events, JadeUIApp, Router
 
 app = JadeUIApp()
 router = Router()
@@ -68,6 +68,37 @@ def get_stats(window_id, data):
     return 1
 
 
+# ============ 窗口事件处理 ============
+
+def on_window_resized(data):
+    """窗口大小变化事件处理
+    
+    事件类型: window-resized
+    数据格式: {"width": 宽度, "height": 高度}
+    """
+    print(f"窗口大小变化: {data}")
+    # 可以解析 JSON 获取具体尺寸
+    try:
+        size = json.loads(data)
+        print(f"   宽度: {size.get('width')}, 高度: {size.get('height')}")
+    except:
+        pass
+
+
+def on_window_moved(data):
+    """窗口移动事件处理
+    
+    事件类型: window-moved
+    数据格式: {"x": x坐标, "y": y坐标}
+    """
+    print(f"窗口移动: {data}")
+    # 可以解析 JSON 获取具体坐标
+    try:
+        position = json.loads(data)
+        print(f"    x: {position.get('x')}, y: {position.get('y')}")
+    except:
+        pass
+
 # ============ 应用启动 ============
 
 @app.on_ready
@@ -78,7 +109,7 @@ def on_ready():
     web_dir = os.path.join(os.path.dirname(__file__), "web")
 
     # mount 会自动导航到 initial_path (默认 "/")
-    router.mount(
+    window = router.mount(
         title="JadeUI Demo",
         web_dir=web_dir,
         width=1100,
@@ -86,6 +117,10 @@ def on_ready():
         sidebar_width=200,
         theme="system",
     )
+
+    # 监听窗口大小变化事件
+    window.on(Events.WINDOW_RESIZED, on_window_resized)
+    window.on(Events.WINDOW_MOVED, on_window_moved)
 
 
 if __name__ == "__main__":

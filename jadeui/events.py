@@ -246,6 +246,7 @@ class GlobalEventManager:
 
 
 # Standard event names
+# 参考: https://jade.run/guides/events/event-types
 class Events:
     """Standard event name constants"""
 
@@ -256,24 +257,35 @@ class Events:
 
     # Window events
     WINDOW_CREATED = "window-created"
+    APP_WINDOW_CREATED = "app-window-created"
     WINDOW_CLOSED = "window-closed"
-    WINDOW_FOCUS = "window-focus"
-    WINDOW_BLUR = "window-blur"
-    WINDOW_RESIZE = "window-resize"
-    WINDOW_MOVE = "window-move"
-    WINDOW_MAXIMIZE = "window-maximize"
-    WINDOW_MINIMIZE = "window-minimize"
-    WINDOW_RESTORE = "window-restore"
+    WINDOW_CLOSING = "window-closing"
+    WINDOW_RESIZED = "window-resized"
+    WINDOW_STATE_CHANGED = "window-state-changed"
+    WINDOW_MOVED = "window-moved"
+    WINDOW_FOCUSED = "window-focused"
+    WINDOW_BLURRED = "window-blurred"
+    WINDOW_DESTROYED = "window-destroyed"
+    RESIZED = "resized"  # 字符串形式
 
-    # Page events
-    PAGE_LOADED = "page-loaded"
-    PAGE_LOADING = "page-loading"
-    PAGE_ERROR = "page-error"
+    # WebView events
+    WEBVIEW_WILL_NAVIGATE = "webview-will-navigate"
+    WEBVIEW_DID_START_LOADING = "webview-did-start-loading"
+    WEBVIEW_DID_FINISH_LOAD = "webview-did-finish-load"
+    WEBVIEW_NEW_WINDOW = "webview-new-window"
+    WEBVIEW_PAGE_TITLE_UPDATED = "webview-page-title-updated"
+    WEBVIEW_PAGE_ICON_UPDATED = "webview-page-icon-updated"
+    FAVICON_UPDATED = "favicon-updated"
+    JAVASCRIPT_RESULT = "javascript-result"
 
     # File events
     FILE_DROP = "file-drop"
-    FILE_DROP_HOVER = "file-drop-hover"
-    FILE_DROP_CANCELLED = "file-drop-cancelled"
+
+    # Theme events
+    THEME_CHANGED = "theme-changed"
+
+    # Other events
+    UPDATE_WINDOW_ICON = "update-window-icon"
 
     # IPC events
     IPC_MESSAGE = "ipc-message"
