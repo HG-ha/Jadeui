@@ -8,20 +8,22 @@ from __future__ import annotations
 
 import ctypes
 import logging
-from typing import Any, Callable, Optional, Tuple
+from json import loads as _json_loads
+from typing import Any, Callable, Dict, List, Optional, Tuple, TypeVar, Union
 
 from .core import DLLManager
 from .core.types import (
     RGBA,
     FileDropCallback,
     GenericWindowEventCallback,
-    PageLoadCallback,
     WebViewSettings,
     WebViewWindowOptions,
-    WindowEventCallback,
 )
 from .events import EventEmitter
 from .exceptions import WindowCreationError
+
+# Type variables for callback decorators
+F = TypeVar("F", bound=Callable[..., Any])
 
 logger = logging.getLogger(__name__)
 
@@ -45,6 +47,73 @@ class Backdrop:
     MICA = "mica"  # Mica 效果，Windows 11 默认背景材料
     MICA_ALT = "micaAlt"  # Mica Alt 效果，Mica 的替代版本
     ACRYLIC = "acrylic"  # Acrylic 效果，半透明模糊背景
+
+
+# ==================== Event Parameter Extractors ====================
+# Pre-compiled extractors for high-performance event argument parsing.
+# Format: event_name -> (extractor_func, is_dict_passthrough)
+# - extractor_func: lambda that extracts args tuple from parsed JSON dict
+# - is_dict_passthrough: if True, pass the entire dict to callback
+
+
+def _extract_none(d: Dict) -> tuple:
+    return ()
+
+
+def _extract_resize(d: Dict) -> tuple:
+    return (d.get("width", 0), d.get("height", 0))
+
+
+def _extract_move(d: Dict) -> tuple:
+    return (d.get("x", 0), d.get("y", 0))
+
+
+def _extract_state(d: Dict) -> tuple:
+    return (d.get("isMaximized", False),)
+
+
+def _extract_url(d: Dict) -> tuple:
+    return (d.get("url", ""),)
+
+
+def _extract_title(d: Dict) -> tuple:
+    return (d.get("title", ""),)
+
+
+def _extract_new_window(d: Dict) -> tuple:
+    return (d.get("url", ""), d.get("frame_name", ""))
+
+
+def _extract_favicon(d: Dict) -> tuple:
+    return (d.get("favicon", ""),)
+
+
+def _extract_js_result(d: Dict) -> tuple:
+    return (d.get("callbackId"), d.get("result"))
+
+
+# Event extractors mapping: event_name -> (extractor, pass_dict_if_no_extractor)
+_EVENT_EXTRACTORS: Dict[str, Callable[[Dict], tuple]] = {
+    # Window events
+    "window-resized": _extract_resize,
+    "window-moved": _extract_move,
+    "window-state-changed": _extract_state,
+    "window-focused": _extract_none,
+    "window-blurred": _extract_none,
+    "window-closing": _extract_none,
+    "window-created": _extract_none,
+    "window-closed": _extract_none,
+    "window-destroyed": _extract_none,
+    # WebView events
+    "webview-will-navigate": _extract_url,
+    "webview-did-start-loading": _extract_url,
+    "webview-did-finish-load": _extract_url,
+    "webview-new-window": _extract_new_window,
+    "webview-page-title-updated": _extract_title,
+    "favicon-updated": _extract_favicon,
+    # Other events
+    "javascript-result": _extract_js_result,
+}
 
 
 class Window(EventEmitter):
@@ -74,6 +143,11 @@ class Window(EventEmitter):
 
     # Class-level window registry
     _windows: dict[int, "Window"] = {}
+
+    # Class-level flag to track if global event handlers are registered
+    _global_handlers_registered: bool = False
+    # Class-level callback references to prevent garbage collection
+    _global_callbacks: list = []
 
     def __init__(
         self,
@@ -236,8 +310,212 @@ class Window(EventEmitter):
         # 其他事件使用父类的 on 方法
         return super().on(event, callback)
 
+    # ==================== Typed Event Decorators ====================
+    # These provide IDE type hints for event callback parameters
+
+    def on_resized(self, callback: Callable[[int, int], Any]) -> Callable[[int, int], Any]:
+        """Register a callback for window resize events.
+
+        Args:
+            callback: Function to call when window is resized.
+                - width (int): New window width in pixels
+                - height (int): New window height in pixels
+
+        Example:
+            @window.on_resized
+            def handle_resize(width: int, height: int):
+                print(f"Window resized to {width}x{height}")
+        """
+        self._register_jade_on_event("window-resized", callback)
+        return callback
+
+    def on_moved(self, callback: Callable[[int, int], Any]) -> Callable[[int, int], Any]:
+        """Register a callback for window move events.
+
+        Args:
+            callback: Function to call when window is moved.
+                - x (int): New X position in pixels
+                - y (int): New Y position in pixels
+
+        Example:
+            @window.on_moved
+            def handle_move(x: int, y: int):
+                print(f"Window moved to ({x}, {y})")
+        """
+        self._register_jade_on_event("window-moved", callback)
+        return callback
+
+    def on_focused(self, callback: Callable[[], Any]) -> Callable[[], Any]:
+        """Register a callback for window focus events.
+
+        Args:
+            callback: Function to call when window gains focus (no parameters).
+
+        Example:
+            @window.on_focused
+            def handle_focus():
+                print("Window focused")
+        """
+        self._register_jade_on_event("window-focused", callback)
+        return callback
+
+    def on_blurred(self, callback: Callable[[], Any]) -> Callable[[], Any]:
+        """Register a callback for window blur events.
+
+        Args:
+            callback: Function to call when window loses focus (no parameters).
+
+        Example:
+            @window.on_blurred
+            def handle_blur():
+                print("Window lost focus")
+        """
+        self._register_jade_on_event("window-blurred", callback)
+        return callback
+
+    def on_closing(
+        self, callback: Callable[[], Union[bool, int, None]]
+    ) -> Callable[[], Union[bool, int, None]]:
+        """Register a callback for window closing events.
+
+        Return True or 1 to prevent the window from closing.
+
+        Args:
+            callback: Function to call when window is about to close.
+                Returns: True/1 to prevent closing, False/0/None to allow.
+
+        Example:
+            @window.on_closing
+            def handle_closing():
+                if has_unsaved_changes:
+                    return True  # Prevent closing
+                return False  # Allow closing
+        """
+        self._register_jade_on_event("window-closing", callback)
+        return callback
+
+    def on_state_changed(self, callback: Callable[[bool], Any]) -> Callable[[bool], Any]:
+        """Register a callback for window state change events.
+
+        Args:
+            callback: Function to call when window state changes.
+                - is_maximized (bool): Whether window is maximized
+
+        Example:
+            @window.on_state_changed
+            def handle_state(is_maximized: bool):
+                print(f"Maximized: {is_maximized}")
+        """
+        self._register_jade_on_event("window-state-changed", callback)
+        return callback
+
+    def on_file_dropped(
+        self, callback: Callable[[List[str], int, int], Any]
+    ) -> Callable[[List[str], int, int], Any]:
+        """Register a callback for file drop events.
+
+        Note: Using this event will intercept WebView's drag events,
+              preventing the frontend from receiving native drag events.
+
+        Args:
+            callback: Function to call when files are dropped.
+                - files (List[str]): List of dropped file paths
+                - x (int): Drop X position
+                - y (int): Drop Y position
+
+        Example:
+            @window.on_file_dropped
+            def handle_drop(files: list, x: int, y: int):
+                print(f"Dropped {len(files)} files at ({x}, {y})")
+                for f in files:
+                    print(f"  - {f}")
+        """
+        self._register_file_drop_handler(callback)
+        return callback
+
+    def on_navigate(
+        self, callback: Callable[[str], Union[bool, int, None]]
+    ) -> Callable[[str], Union[bool, int, None]]:
+        """Register a callback for navigation events.
+
+        Return True or 1 to prevent navigation.
+
+        Args:
+            callback: Function to call before navigation.
+                - url (str): Target URL
+                Returns: True/1 to prevent navigation, False/0/None to allow.
+
+        Example:
+            @window.on_navigate
+            def handle_navigate(url: str):
+                if "dangerous" in url:
+                    return True  # Block navigation
+                print(f"Navigating to: {url}")
+        """
+        self._register_jade_on_event("webview-will-navigate", callback)
+        return callback
+
+    def on_page_loaded(self, callback: Callable[[str], Any]) -> Callable[[str], Any]:
+        """Register a callback for page load complete events.
+
+        Args:
+            callback: Function to call when page finishes loading.
+                - url (str): Loaded page URL
+
+        Example:
+            @window.on_page_loaded
+            def handle_loaded(url: str):
+                print(f"Page loaded: {url}")
+        """
+        self._register_jade_on_event("webview-did-finish-load", callback)
+        return callback
+
+    def on_title_updated(self, callback: Callable[[str], Any]) -> Callable[[str], Any]:
+        """Register a callback for page title update events.
+
+        Args:
+            callback: Function to call when page title changes.
+                - title (str): New page title
+
+        Example:
+            @window.on_title_updated
+            def handle_title(title: str):
+                print(f"Title changed to: {title}")
+        """
+        self._register_jade_on_event("webview-page-title-updated", callback)
+        return callback
+
+    def on_new_window(
+        self, callback: Callable[[str, str], Union[bool, int, None]]
+    ) -> Callable[[str, str], Union[bool, int, None]]:
+        """Register a callback for new window request events.
+
+        Return True or 1 to prevent opening new window.
+
+        Args:
+            callback: Function to call when new window is requested.
+                - url (str): URL for new window
+                - frame_name (str): Target frame name (e.g., "_blank")
+                Returns: True/1 to prevent, False/0/None to allow.
+
+        Example:
+            @window.on_new_window
+            def handle_new_window(url: str, frame_name: str):
+                print(f"New window requested: {url}")
+                # Open in same window instead
+                window.navigate(url)
+                return True  # Prevent new window
+        """
+        self._register_jade_on_event("webview-new-window", callback)
+        return callback
+
+    # ==================== Internal Event Registration ====================
+
     def _register_jade_on_event(self, event: str, callback: Callable[..., Any]) -> None:
-        """通用的 jade_on 事件注册器"""
+        """通用的 jade_on 事件注册器
+
+        Uses pre-compiled extractors for high-performance event argument parsing.
+        """
         # 添加到本地监听器
         self._listeners[event].append(callback)
 
@@ -245,17 +523,30 @@ class Window(EventEmitter):
         if event in self._registered_jade_events:
             return
 
+        # 获取预编译的参数提取器（O(1) 查找）
+        extractor = _EVENT_EXTRACTORS.get(event)
+
         # 创建 ctypes 回调
         @GenericWindowEventCallback
         def event_callback(window_id: int, json_data: bytes) -> int:
             result = 0
             try:
+                # 解析 JSON
                 data_str = json_data.decode("utf-8") if json_data else "{}"
+                data_dict = _json_loads(data_str) if data_str else {}
                 logger.debug(f"Event {event}: window={window_id}, data={data_str}")
+
+                # 提取参数
+                if extractor is not None:
+                    args = extractor(data_dict)
+                else:
+                    # 未知事件：传递解析后的字典
+                    args = (data_dict,)
+
                 # 调用所有监听器，收集返回值（用于阻止事件）
                 for cb in list(self._listeners.get(event, [])):
                     try:
-                        ret = cb(data_str)
+                        ret = cb(*args)
                         # 如果任何回调返回 True 或 1，则阻止事件
                         # 适用于: window-closing, webview-new-window
                         if ret is True or ret == 1:
@@ -917,49 +1208,68 @@ class Window(EventEmitter):
             raise WindowCreationError(f"Failed to create window: {e}")
 
     def _setup_event_handlers(self) -> None:
-        """Set up event handlers for the window"""
+        """Set up event handlers for the window
+
+        Uses jade_on to register global event handlers (only once per class).
+        This replaces the deprecated set_window_event_handlers API.
+        """
         if self.id is None:
             return
 
-        # Create callback functions
-        @WindowEventCallback
-        def window_event_callback(window_id, event_type, event_data):
-            return self._on_window_event(window_id, event_type, event_data)
+        # Register global handlers only once (class-level)
+        if not Window._global_handlers_registered:
+            self._register_global_event_handlers()
+            Window._global_handlers_registered = True
 
-        @PageLoadCallback
-        def page_load_callback(window_id, url, status):
-            self._on_page_load(window_id, url, status)
+    @classmethod
+    def _register_global_event_handlers(cls) -> None:
+        """Register global event handlers using jade_on
 
-        # 注意: file-drop 事件需要通过 jade_on 注册，不再通过 set_window_event_handlers
-        # FileDropCallback 现在是 (window_id, json_data) 格式
+        This replaces the deprecated set_window_event_handlers API.
+        All window events are now handled through jade_on.
+        """
+        dll = DLLManager()
 
-        # Store references to prevent garbage collection
-        self._callbacks.extend([window_event_callback, page_load_callback])
+        # Register window-closed event handler
+        @GenericWindowEventCallback
+        def window_closed_callback(window_id: int, json_data: bytes) -> int:
+            try:
+                window = cls._windows.get(window_id)
+                if window:
+                    window._on_closed()
+            except Exception as e:
+                logger.error(f"Error in window-closed handler: {e}")
+            return 0
 
-        # Register with DLL (use 0 for global event handlers)
-        # 注意: file_drop_callback 传 None，因为需要通过 jade_on 单独注册
-        self.dll_manager.set_window_event_handlers(
-            0,
-            ctypes.cast(window_event_callback, ctypes.c_void_p),
-            ctypes.cast(page_load_callback, ctypes.c_void_p),
-            None,  # file-drop 通过 jade_on 注册
+        cls._global_callbacks.append(window_closed_callback)
+        dll.jade_on(
+            b"window-closed",
+            ctypes.cast(window_closed_callback, ctypes.c_void_p),
         )
 
-    def _on_window_event(self, window_id: int, event_type: bytes, event_data: bytes) -> int:
-        """Handle window events"""
-        event_type_str = event_type.decode("utf-8") if event_type else ""
-        event_data_str = event_data.decode("utf-8") if event_data else ""
+        # Register page load events via jade_on
+        # webview-did-finish-load: {"url": "...", "window_id": ...}
+        @GenericWindowEventCallback
+        def page_load_callback(window_id: int, json_data: bytes) -> int:
+            try:
+                data_str = json_data.decode("utf-8") if json_data else "{}"
+                window = cls._windows.get(window_id)
+                if window:
+                    data = _json_loads(data_str) if data_str else {}
+                    url = data.get("url", "")
+                    logger.debug(f"Page load: {window_id}, {url}")
+                    window.emit("page-loaded", url, "complete")
+            except Exception as e:
+                logger.error(f"Error in page-load handler: {e}")
+            return 0
 
-        logger.debug(f"Window event: {window_id}, {event_type_str}, {event_data_str}")
+        cls._global_callbacks.append(page_load_callback)
+        dll.jade_on(
+            b"webview-did-finish-load",
+            ctypes.cast(page_load_callback, ctypes.c_void_p),
+        )
 
-        # Emit event
-        self.emit(event_type_str, event_data_str)
-
-        # Handle window closed
-        if event_type_str in ["window-closed", "close", "closed"]:
-            self._on_closed()
-
-        return 0
+        logger.info("Global event handlers registered via jade_on")
 
     def _on_closed(self) -> None:
         """Handle window closed"""
@@ -969,14 +1279,6 @@ class Window(EventEmitter):
             self.emit("closed")
             self.id = None
 
-    def _on_page_load(self, window_id: int, url: bytes, status: bytes) -> None:
-        """Handle page load events"""
-        url_str = url.decode("utf-8") if url else ""
-        status_str = status.decode("utf-8") if status else ""
-
-        logger.debug(f"Page load: {window_id}, {url_str}, {status_str}")
-        self.emit("page-loaded", url_str, status_str)
-
     def _on_file_drop(self, window_id: int, json_data: bytes) -> None:
         """Handle file drop events
 
@@ -985,11 +1287,9 @@ class Window(EventEmitter):
             json_data: JSON data containing files array and position
                       Format: {"files": ["path1", "path2"], "x": x, "y": y}
         """
-        import json as json_module
-
         try:
             data_str = json_data.decode("utf-8") if json_data else "{}"
-            data = json_module.loads(data_str)
+            data = _json_loads(data_str) if data_str else {}
 
             files = data.get("files", [])
             x = data.get("x", 0)

@@ -4,7 +4,7 @@ JadeUI 后端主导路由示例
 
 import json
 
-from jadeui import Events, JadeUIApp, Router
+from jadeui import JadeUIApp, Router
 
 app = JadeUIApp()
 router = Router()
@@ -64,37 +64,6 @@ def get_stats(window_id, data):
     return 1
 
 
-# ============ 窗口事件处理 ============
-
-def on_window_resized(data):
-    """窗口大小变化事件处理
-    
-    事件类型: window-resized
-    数据格式: {"width": 宽度, "height": 高度}
-    """
-    print(f"窗口大小变化: {data}")
-    # 可以解析 JSON 获取具体尺寸
-    try:
-        size = json.loads(data)
-        print(f"   宽度: {size.get('width')}, 高度: {size.get('height')}")
-    except:
-        pass
-
-
-def on_window_moved(data):
-    """窗口移动事件处理
-    
-    事件类型: window-moved
-    数据格式: {"x": x坐标, "y": y坐标}
-    """
-    print(f"窗口移动: {data}")
-    # 可以解析 JSON 获取具体坐标
-    try:
-        position = json.loads(data)
-        print(f"    x: {position.get('x')}, y: {position.get('y')}")
-    except:
-        pass
-
 # ============ 应用启动 ============
 
 @app.on_ready
@@ -113,10 +82,19 @@ def on_ready():
         theme="system",
     )
 
-    # 监听窗口大小变化事件
-    window.on(Events.WINDOW_RESIZED, on_window_resized)
-    window.on(Events.WINDOW_MOVED, on_window_moved)
+    # 使用类型化装饰器注册事件（IDE 可以显示参数类型）
+    @window.on_resized
+    def on_resize(width: int, height: int):
+        """窗口大小变化 - IDE 会提示 width 和 height 参数"""
+        print(f"窗口大小变化: 宽度={width}, 高度={height}")
 
+    @window.on_moved
+    def on_move(x: int, y: int):
+        """窗口移动 - IDE 会提示 x 和 y 参数"""
+        print(f"窗口移动: x={x}, y={y}")
+    
+    # 测试注册一个窗口大小事件, 不使用类型化装饰器
+    window.on("window-resized", lambda width, height: print(f"窗口大小变化 不使用类型化装饰器: 宽度={width}, 高度={height}"))
 
 if __name__ == "__main__":
     app.initialize()

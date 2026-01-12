@@ -196,14 +196,15 @@ class DLLManager:
             required=True,
         )
 
+        self._try_bind("close_window", [ctypes.c_uint32], ctypes.c_int, required=True)
+
+        # Deprecated: set_window_event_handlers will be removed in JadeView 0.2.1
+        # Use jade_on as replacement. Keep for backward compatibility with older DLLs.
         self._try_bind(
             "set_window_event_handlers",
             [ctypes.c_uint32, ctypes.c_void_p, ctypes.c_void_p, ctypes.c_void_p],
             ctypes.c_int,
-            required=True,
         )
-
-        self._try_bind("close_window", [ctypes.c_uint32], ctypes.c_int, required=True)
 
         # ==================== Optional Functions ====================
         # These are optional and the SDK will work without them
