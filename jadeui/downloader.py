@@ -23,7 +23,7 @@ GITHUB_RELEASE_URL = f"https://github.com/{GITHUB_REPO}/releases/download"
 
 # DLL 版本号（可能与 SDK 版本不同）
 # 当 SDK 修复 bug 但 DLL 未更新时，此版本保持不变
-DLL_VERSION = "0.2.0"
+DLL_VERSION = "0.2.1"
 
 # 链接类型: "static" (推荐) 或 "dynamic"
 # static: DLL内嵌所有依赖，无需额外运行时
@@ -259,8 +259,18 @@ def download_dll(
         print("📂 正在解压...")
 
         with zipfile.ZipFile(tmp_path, "r") as zip_ref:
-            # Extract all files
-            zip_ref.extractall(install_dir)
+            # Check if ZIP contains the expected directory structure
+            namelist = zip_ref.namelist()
+            has_top_dir = any(
+                name.startswith(dist_dir + "/") or name == dist_dir + "/" for name in namelist
+            )
+
+            if has_top_dir:
+                # ZIP contains the directory, extract to install_dir
+                zip_ref.extractall(install_dir)
+            else:
+                # ZIP doesn't contain directory, extract to target_dir
+                zip_ref.extractall(target_dir)
 
         print("✅ 解压完成")
 
@@ -274,7 +284,15 @@ def download_dll(
     # Verify DLL exists
     dll_path = target_dir / dll_name
     if not dll_path.exists():
-        raise RuntimeError(f"解压后未找到 DLL 文件: {dll_path}")
+        # Also check if DLL is directly in install_dir (fallback)
+        alt_path = install_dir / dll_name
+        if alt_path.exists():
+            # Move to correct location
+            import shutil
+
+            shutil.move(str(alt_path), str(dll_path))
+        else:
+            raise RuntimeError(f"解压后未找到 DLL 文件: {dll_path}")
 
     print("\n🎉 安装成功!")
     print(f"   DLL 路径: {dll_path}")

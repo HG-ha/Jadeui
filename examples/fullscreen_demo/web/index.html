@@ -1,0 +1,451 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>全屏功能演示</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #6366f1;
+            --primary-hover: #4f46e5;
+            --success: #10b981;
+            --warning: #f59e0b;
+            --bg-glass: rgba(255, 255, 255, 0.05);
+            --border-glass: rgba(255, 255, 255, 0.1);
+            --text-primary: rgba(255, 255, 255, 0.95);
+            --text-secondary: rgba(255, 255, 255, 0.6);
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, -apple-system, sans-serif;
+            background: transparent;
+            min-height: 100vh;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            color: var(--text-primary);
+        }
+
+        /* 标题栏 */
+        .titlebar {
+            height: 36px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 16px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid var(--border-glass);
+        }
+
+        .titlebar-title {
+            font-size: 13px;
+            font-weight: 500;
+            opacity: 0.9;
+        }
+
+        .titlebar-controls {
+            display: flex;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .titlebar-btn {
+            width: 14px;
+            height: 14px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.15s, opacity 0.15s;
+        }
+
+        .titlebar-btn:hover {
+            transform: scale(1.1);
+        }
+
+        .titlebar-btn.close { background: #ff5f57; }
+        .titlebar-btn.minimize { background: #febc2e; }
+        .titlebar-btn.maximize { background: #28c840; }
+
+        /* 主内容区 */
+        .content {
+            flex: 1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 40px;
+            text-align: center;
+            gap: 32px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            font-weight: 600;
+            margin-bottom: 12px;
+            background: linear-gradient(135deg, #6366f1 0%, #a855f7 50%, #ec4899 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            color: var(--text-secondary);
+            max-width: 500px;
+            line-height: 1.6;
+        }
+
+        /* 状态显示 */
+        .status-panel {
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            border: 1px solid var(--border-glass);
+            border-radius: 16px;
+            padding: 24px 40px;
+            display: flex;
+            gap: 40px;
+        }
+
+        .status-item {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .status-label {
+            font-size: 0.85rem;
+            color: var(--text-secondary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+
+        .status-value {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            font-size: 1.1rem;
+            font-weight: 600;
+        }
+
+        .status-indicator {
+            width: 10px;
+            height: 10px;
+            border-radius: 50%;
+            background: #6b7280;
+            transition: background 0.3s;
+        }
+
+        .status-indicator.active {
+            background: var(--success);
+            box-shadow: 0 0 10px rgba(16, 185, 129, 0.5);
+        }
+
+        /* 按钮组 */
+        .button-group {
+            display: flex;
+            gap: 16px;
+            flex-wrap: wrap;
+            justify-content: center;
+        }
+
+        .btn {
+            padding: 14px 28px;
+            border: none;
+            border-radius: 12px;
+            font-size: 1rem;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #8b5cf6 100%);
+            color: white;
+            box-shadow: 0 4px 15px rgba(99, 102, 241, 0.3);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(99, 102, 241, 0.4);
+        }
+
+        .btn-secondary {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            color: var(--text-primary);
+            border: 1px solid var(--border-glass);
+        }
+
+        .btn-secondary:hover {
+            background: rgba(255, 255, 255, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .btn-success {
+            background: linear-gradient(135deg, #10b981 0%, #059669 100%);
+            color: white;
+        }
+
+        .btn-warning {
+            background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);
+            color: white;
+        }
+
+        .btn-icon {
+            font-size: 1.2rem;
+        }
+
+        /* 提示信息 */
+        .tips {
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            border: 1px solid var(--border-glass);
+            border-radius: 12px;
+            padding: 16px 24px;
+            font-size: 0.9rem;
+            color: var(--text-secondary);
+        }
+
+        .tips kbd {
+            background: rgba(255, 255, 255, 0.1);
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-family: 'Consolas', monospace;
+            font-size: 0.85rem;
+            border: 1px solid var(--border-glass);
+        }
+
+        /* 全屏模式下隐藏标题栏提示 */
+        .fullscreen-hint {
+            position: fixed;
+            top: 16px;
+            left: 50%;
+            transform: translateX(-50%);
+            background: rgba(0, 0, 0, 0.8);
+            color: white;
+            padding: 8px 16px;
+            border-radius: 8px;
+            font-size: 0.85rem;
+            opacity: 0;
+            transition: opacity 0.3s;
+            pointer-events: none;
+        }
+
+        body.fullscreen .fullscreen-hint {
+            opacity: 1;
+            animation: fadeOut 3s forwards;
+            animation-delay: 1s;
+        }
+
+        @keyframes fadeOut {
+            to { opacity: 0; }
+        }
+
+        /* 版本标签 */
+        .version-badge {
+            position: fixed;
+            bottom: 16px;
+            right: 16px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(10px);
+            padding: 6px 12px;
+            border-radius: 20px;
+            font-size: 0.75rem;
+            color: var(--text-secondary);
+            border: 1px solid var(--border-glass);
+        }
+    </style>
+</head>
+<body>
+    <div class="titlebar">
+        <span class="titlebar-title">🖥️ 全屏功能演示</span>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn minimize" onclick="jade.ipcSend('windowAction', 'minimize')"></button>
+            <button class="titlebar-btn maximize" onclick="jade.ipcSend('windowAction', 'maximize')"></button>
+            <button class="titlebar-btn close" onclick="jade.ipcSend('windowAction', 'close')"></button>
+        </div>
+    </div>
+
+    <div class="fullscreen-hint">按 ESC 或点击按钮退出全屏</div>
+
+    <div class="content">
+        <div class="header">
+            <h1>🖥️ 全屏功能演示</h1>
+            <p>体验 JadeUI 的全屏 API，支持切换全屏、查询状态等功能。需要 JadeView 0.2.1+ 版本。</p>
+        </div>
+
+        <div class="status-panel">
+            <div class="status-item">
+                <span class="status-label">全屏状态</span>
+                <div class="status-value">
+                    <span class="status-indicator" id="fullscreenIndicator"></span>
+                    <span id="fullscreenText">否</span>
+                </div>
+            </div>
+            <div class="status-item">
+                <span class="status-label">最大化状态</span>
+                <div class="status-value">
+                    <span class="status-indicator" id="maximizedIndicator"></span>
+                    <span id="maximizedText">否</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="button-group">
+            <button class="btn btn-primary" onclick="toggleFullscreen()">
+                <span class="btn-icon">⛶</span>
+                切换全屏 (Python)
+            </button>
+            <button class="btn btn-success" onclick="enterFullscreen()">
+                <span class="btn-icon">📺</span>
+                进入全屏 (Python)
+            </button>
+            <button class="btn btn-warning" onclick="exitFullscreen()">
+                <span class="btn-icon">🔲</span>
+                退出全屏 (Python)
+            </button>
+            <button class="btn btn-secondary" onclick="refreshState()">
+                <span class="btn-icon">🔄</span>
+                刷新状态
+            </button>
+        </div>
+
+        <div class="button-group" style="margin-top: 16px;">
+            <button class="btn btn-primary" style="background: linear-gradient(135deg, #f59e0b 0%, #d97706 100%);" onclick="jsFullscreen()">
+                <span class="btn-icon">🌐</span>
+                JS 全屏测试
+            </button>
+            <button class="btn btn-secondary" onclick="jsExitFullscreen()">
+                <span class="btn-icon">✕</span>
+                JS 退出全屏
+            </button>
+        </div>
+
+        <div class="tips" style="margin-top: 16px; background: rgba(245, 158, 11, 0.1); border-color: rgba(245, 158, 11, 0.3);">
+            💡 <strong>JS 全屏</strong> 使用浏览器 Fullscreen API，受 <code>allow_fullscreen</code> 设置控制
+        </div>
+
+        <div class="tips">
+            💡 提示：使用 <kbd>F11</kbd> 快捷键或点击按钮控制全屏，<kbd>ESC</kbd> 退出全屏
+        </div>
+    </div>
+
+    <div class="version-badge">JadeView 0.2.1+</div>
+
+    <script>
+        // 更新状态显示
+        function updateStatusDisplay(isFullscreen, isMaximized) {
+            const fullscreenIndicator = document.getElementById('fullscreenIndicator');
+            const fullscreenText = document.getElementById('fullscreenText');
+            const maximizedIndicator = document.getElementById('maximizedIndicator');
+            const maximizedText = document.getElementById('maximizedText');
+
+            fullscreenIndicator.classList.toggle('active', isFullscreen);
+            fullscreenText.textContent = isFullscreen ? '是' : '否';
+
+            maximizedIndicator.classList.toggle('active', isMaximized);
+            maximizedText.textContent = isMaximized ? '是' : '否';
+
+            // 更新 body class 用于显示全屏提示
+            document.body.classList.toggle('fullscreen', isFullscreen);
+        }
+
+        // 切换全屏
+        function toggleFullscreen() {
+            console.log('切换全屏...');
+            jade.ipcSend('toggleFullscreen', '');
+        }
+
+        // 进入全屏
+        function enterFullscreen() {
+            console.log('进入全屏...');
+            jade.ipcSend('setFullscreen', 'true');
+        }
+
+        // 退出全屏
+        function exitFullscreen() {
+            console.log('退出全屏...');
+            jade.ipcSend('setFullscreen', 'false');
+        }
+
+        // 刷新状态
+        function refreshState() {
+            console.log('刷新状态...');
+            jade.ipcSend('getFullscreenState', '');
+        }
+
+        // JS 全屏 (使用浏览器 Fullscreen API，受 allow_fullscreen 控制)
+        function jsFullscreen() {
+            console.log('JS 全屏测试...');
+            document.documentElement.requestFullscreen().then(() => {
+                console.log('JS 全屏成功');
+            }).catch((err) => {
+                console.error('JS 全屏失败:', err);
+                alert('JS 全屏失败: ' + err.message + '\n\n如果 allow_fullscreen=False，此功能将被禁用');
+            });
+        }
+
+        // JS 退出全屏
+        function jsExitFullscreen() {
+            console.log('JS 退出全屏...');
+            if (document.fullscreenElement) {
+                document.exitFullscreen().then(() => {
+                    console.log('JS 退出全屏成功');
+                }).catch((err) => {
+                    console.error('JS 退出全屏失败:', err);
+                });
+            }
+        }
+
+        // 监听来自后端的状态更新
+        if (typeof jade !== 'undefined' && jade.on) {
+            jade.on('fullscreenState', (data) => {
+                console.log('收到状态更新:', data);
+                try {
+                    const state = typeof data === 'string' ? JSON.parse(data) : data;
+                    updateStatusDisplay(state.isFullscreen || false, state.isMaximized || false);
+                } catch (e) {
+                    console.error('解析状态失败:', e);
+                }
+            });
+        }
+
+        // 键盘快捷键
+        document.addEventListener('keydown', (e) => {
+            if (e.key === 'F11') {
+                e.preventDefault();
+                toggleFullscreen();
+            } else if (e.key === 'Escape') {
+                exitFullscreen();
+            }
+        });
+
+        // 页面加载时获取初始状态
+        document.addEventListener('DOMContentLoaded', () => {
+            console.log('页面加载完成，等待 jade 对象...');
+            // 延迟获取状态，确保 jade 对象已就绪
+            setTimeout(() => {
+                if (typeof jade !== 'undefined') {
+                    console.log('jade 对象已就绪');
+                    refreshState();
+                } else {
+                    console.error('jade 对象未找到');
+                }
+            }, 500);
+        });
+    </script>
+</body>
+</html>
+

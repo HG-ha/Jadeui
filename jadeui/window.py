@@ -190,6 +190,8 @@ class Window(EventEmitter):
                 - disable_right_click (bool): Disable right-click menu (default: True)
                 - user_agent (str): Custom user agent string
                 - preload_js (str): JavaScript to run before page load
+                - allow_fullscreen (bool): Allow page to enter fullscreen (default: True)
+                    Note: Requires JadeView DLL 0.2.1+
         """
         super().__init__()
 
@@ -231,6 +233,7 @@ class Window(EventEmitter):
         self._options.setdefault("disable_right_click", True)
         self._options.setdefault("user_agent", None)
         self._options.setdefault("preload_js", None)
+        self._options.setdefault("allow_fullscreen", True)  # JadeView 0.2.1+
 
         # Callback references to prevent garbage collection
         self._callbacks: list = []
@@ -793,12 +796,16 @@ class Window(EventEmitter):
     def set_fullscreen(self, fullscreen: bool) -> "Window":
         """Set fullscreen mode
 
+        Note:
+            Requires JadeView DLL version 0.2.1 or above.
+
         Args:
             fullscreen: Whether to enable fullscreen
 
         Returns:
             Self for chaining
         """
+        self._options["fullscreen"] = fullscreen
         if self.id is not None:
             self.dll_manager.set_window_fullscreen(self.id, 1 if fullscreen else 0)
         return self
@@ -1104,8 +1111,17 @@ class Window(EventEmitter):
 
     @property
     def is_fullscreen(self) -> bool:
-        """Check if window is in fullscreen mode"""
-        # Note: DLL might not provide this query, track locally
+        """Check if window is in fullscreen mode
+
+        Note:
+            Requires JadeView DLL version 0.2.1 or above for accurate query.
+            Falls back to local state tracking for older versions.
+        """
+        if self.id is not None:
+            # Try to query DLL first (JadeView 0.2.1+)
+            if self.dll_manager.has_function("is_window_fullscreen"):
+                return self.dll_manager.is_window_fullscreen(self.id) == 1
+        # Fallback to local tracking
         return self._options.get("fullscreen", False)
 
     # ==================== Window Creation ====================
@@ -1166,6 +1182,7 @@ class Window(EventEmitter):
             disable_right_click=self._options.get("disable_right_click", False),
             ua=user_agent.encode("utf-8") if user_agent else None,
             preload_js=preload_js.encode("utf-8") if preload_js else None,
+            allow_fullscreen=self._options.get("allow_fullscreen", True),
         )
 
         # Prepare URL

@@ -146,6 +146,7 @@ class WebViewSettings(ctypes.Structure):
         ("disable_right_click", ctypes.c_int),
         ("ua", ctypes.c_char_p),
         ("preload_js", ctypes.c_char_p),
+        ("allow_fullscreen", ctypes.c_int),  # JadeView 0.2.1+: 控制是否允许页面全屏
     ]
 
     def __init__(
@@ -155,6 +156,7 @@ class WebViewSettings(ctypes.Structure):
         disable_right_click: bool = False,
         ua: Optional[bytes] = None,
         preload_js: Optional[bytes] = None,
+        allow_fullscreen: bool = True,  # 默认允许全屏
     ):
         super().__init__(
             int(autoplay),
@@ -162,6 +164,7 @@ class WebViewSettings(ctypes.Structure):
             int(disable_right_click),
             ua,
             preload_js,
+            int(allow_fullscreen),
         )
 
 

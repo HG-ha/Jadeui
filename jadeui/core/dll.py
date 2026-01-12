@@ -293,6 +293,7 @@ class DLLManager:
         self._try_bind("is_window_minimized", [ctypes.c_uint32], ctypes.c_int)
         self._try_bind("is_window_visible", [ctypes.c_uint32], ctypes.c_int)
         self._try_bind("is_window_focused", [ctypes.c_uint32], ctypes.c_int)
+        self._try_bind("is_window_fullscreen", [ctypes.c_uint32], ctypes.c_int)
 
         # Window focus
         self._try_bind("focus_window", [ctypes.c_uint32], ctypes.c_int)
