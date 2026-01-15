@@ -248,44 +248,102 @@ class GlobalEventManager:
 # Standard event names
 # 参考: https://jade.run/guides/events/event-types
 class Events:
-    """Standard event name constants"""
+    """Standard event name constants
 
-    # App lifecycle events
-    APP_READY = "app-ready"
-    WINDOW_ALL_CLOSED = "window-all-closed"
-    BEFORE_QUIT = "before-quit"
+    事件注册方式指南:
 
-    # Window events
-    WINDOW_CREATED = "window-created"
-    APP_WINDOW_CREATED = "app-window-created"
-    WINDOW_CLOSED = "window-closed"
-    WINDOW_CLOSING = "window-closing"
-    WINDOW_RESIZED = "window-resized"
-    WINDOW_STATE_CHANGED = "window-state-changed"
-    WINDOW_MOVED = "window-moved"
-    WINDOW_FOCUSED = "window-focused"
-    WINDOW_BLURRED = "window-blurred"
-    WINDOW_DESTROYED = "window-destroyed"
-    RESIZED = "resized"  # 字符串形式
+    1. 应用生命周期事件 - 通过 JadeUIApp 注册:
+        ```python
+        from jadeui import JadeUIApp
+        app = JadeUIApp()
 
-    # WebView events
-    WEBVIEW_WILL_NAVIGATE = "webview-will-navigate"
-    WEBVIEW_DID_START_LOADING = "webview-did-start-loading"
-    WEBVIEW_DID_FINISH_LOAD = "webview-did-finish-load"
-    WEBVIEW_NEW_WINDOW = "webview-new-window"
-    WEBVIEW_PAGE_TITLE_UPDATED = "webview-page-title-updated"
-    WEBVIEW_PAGE_ICON_UPDATED = "webview-page-icon-updated"
-    FAVICON_UPDATED = "favicon-updated"
-    JAVASCRIPT_RESULT = "javascript-result"
+        @app.on_ready
+        def handle_ready():
+            print("应用已就绪")
+        ```
 
-    # File events
-    FILE_DROP = "file-drop"
+    2. 窗口事件 - 通过 Window.on() 或专用装饰器注册:
+        ```python
+        from jadeui import Window
 
-    # Theme events
-    THEME_CHANGED = "theme-changed"
+        window = Window(title="示例")
 
-    # Other events
-    UPDATE_WINDOW_ICON = "update-window-icon"
+        # 使用专用装饰器（推荐，有类型提示）
+        @window.on_resized
+        def handle_resize(width: int, height: int):
+            print(f"大小: {width}x{height}")
 
-    # IPC events
-    IPC_MESSAGE = "ipc-message"
+        # 或使用通用 on() 方法
+        @window.on("window-moved")
+        def handle_move(x: int, y: int):
+            print(f"位置: ({x}, {y})")
+        ```
+
+    3. IPC 事件 - 通过 IPCManager 注册:
+        ```python
+        from jadeui.ipc import IPCManager
+
+        ipc = IPCManager()
+
+        @ipc.on("myChannel")
+        def handle_message(window_id: int, message: str):
+            return "收到"
+        ```
+
+    Window 专用装饰器列表:
+        - @window.on_resized        -> WINDOW_RESIZED
+        - @window.on_moved          -> WINDOW_MOVED
+        - @window.on_focused        -> WINDOW_FOCUSED
+        - @window.on_blurred        -> WINDOW_BLURRED
+        - @window.on_closing        -> WINDOW_CLOSING (可阻止关闭)
+        - @window.on_state_changed  -> WINDOW_STATE_CHANGED
+        - @window.on_navigate       -> WEBVIEW_WILL_NAVIGATE (可阻止导航)
+        - @window.on_page_loaded    -> WEBVIEW_DID_FINISH_LOAD
+        - @window.on_title_updated  -> WEBVIEW_PAGE_TITLE_UPDATED
+        - @window.on_new_window     -> WEBVIEW_NEW_WINDOW (可阻止新窗口)
+        - @window.on_file_dropped   -> FILE_DROP
+        - @window.on_js_result      -> JAVASCRIPT_RESULT
+    """
+
+    # ==================== 应用生命周期事件 ====================
+    # 注册方式: @app.on_ready, @app.on_all_windows_closed 等
+    APP_READY = "app-ready"  # 应用初始化完成
+    WINDOW_ALL_CLOSED = "window-all-closed"  # 所有窗口关闭
+    BEFORE_QUIT = "before-quit"  # 应用即将退出
+
+    # ==================== 窗口事件 ====================
+    # 注册方式: @window.on("事件名") 或专用装饰器
+    WINDOW_CREATED = "window-created"  # 窗口创建完成
+    APP_WINDOW_CREATED = "app-window-created"  # 同上，别名
+    WINDOW_CLOSED = "window-closed"  # 窗口已关闭
+    WINDOW_CLOSING = "window-closing"  # 窗口即将关闭，可返回1阻止 -> @window.on_closing
+    WINDOW_RESIZED = "window-resized"  # 窗口大小改变 -> @window.on_resized
+    WINDOW_STATE_CHANGED = "window-state-changed"  # 最大化/还原状态改变 -> @window.on_state_changed
+    WINDOW_MOVED = "window-moved"  # 窗口位置改变 -> @window.on_moved
+    WINDOW_FOCUSED = "window-focused"  # 窗口获得焦点 -> @window.on_focused
+    WINDOW_BLURRED = "window-blurred"  # 窗口失去焦点 -> @window.on_blurred
+    WINDOW_DESTROYED = "window-destroyed"  # 窗口销毁
+    RESIZED = "resized"  # 窗口大小改变（旧格式，兼容用）
+
+    # ==================== WebView 事件 ====================
+    # 注册方式: @window.on("事件名") 或专用装饰器
+    WEBVIEW_WILL_NAVIGATE = "webview-will-navigate"  # 即将导航，可返回1阻止 -> @window.on_navigate
+    WEBVIEW_DID_START_LOADING = "webview-did-start-loading"  # 开始加载
+    WEBVIEW_DID_FINISH_LOAD = "webview-did-finish-load"  # 加载完成 -> @window.on_page_loaded
+    WEBVIEW_NEW_WINDOW = "webview-new-window"  # 请求新窗口，可返回1阻止 -> @window.on_new_window
+    WEBVIEW_PAGE_TITLE_UPDATED = (
+        "webview-page-title-updated"  # 标题更新 -> @window.on_title_updated
+    )
+    WEBVIEW_PAGE_ICON_UPDATED = "webview-page-icon-updated"  # 图标更新
+    FAVICON_UPDATED = "favicon-updated"  # 图标更新（别名）
+    JAVASCRIPT_RESULT = "javascript-result"  # JS执行结果 -> @window.on_js_result
+
+    # ==================== 文件事件 ====================
+    FILE_DROP = "file-drop"  # 文件拖放到窗口 -> @window.on_file_dropped
+
+    # ==================== 主题事件 ====================
+    THEME_CHANGED = "theme-changed"  # 系统主题改变
+
+    # ==================== 其他事件 ====================
+    UPDATE_WINDOW_ICON = "update-window-icon"  # 更新窗口图标
+    IPC_MESSAGE = "ipc-message"  # IPC 消息（通过 IPCManager 注册）

@@ -244,6 +244,10 @@ class Window(EventEmitter):
         # 待应用的设置（在窗口创建前设置的属性）
         self._pending_backdrop: Optional[str] = None
 
+        # JavaScript 执行回调注册表: callbackId -> callback
+        self._js_callbacks: Dict[int, Callable[[Any], Any]] = {}
+        self._js_callback_id_counter: int = 0
+
     # 需要通过 jade_on 注册到 DLL 的事件列表
     # 参考: https://jade.run/guides/events/event-types
     JADE_ON_EVENTS = {
@@ -510,6 +514,25 @@ class Window(EventEmitter):
                 return True  # Prevent new window
         """
         self._register_jade_on_event("webview-new-window", callback)
+        return callback
+
+    def on_js_result(self, callback: Callable[[int, Any], Any]) -> Callable[[int, Any], Any]:
+        """Register a callback for JavaScript execution result events.
+
+        This listens to the native javascript-result event from the DLL.
+        For simpler usage, consider using execute_js() with a callback parameter.
+
+        Args:
+            callback: Function to call when JS execution completes.
+                - callback_id (int): The callback ID
+                - result (Any): The execution result
+
+        Example:
+            @window.on_js_result
+            def handle_js_result(callback_id: int, result):
+                print(f"JS result [{callback_id}]: {result}")
+        """
+        self._register_jade_on_event("javascript-result", callback)
         return callback
 
     # ==================== Internal Event Registration ====================
@@ -1032,29 +1055,109 @@ class Window(EventEmitter):
         """
         return self.load_url(url)
 
-    def execute_js(self, script: str) -> "Window":
+    def execute_js(
+        self,
+        script: str,
+        callback: Optional[Callable[[Any], Any]] = None,
+    ) -> "Window":
         """Execute JavaScript in the window
 
         Args:
             script: JavaScript code to execute
+            callback: Optional callback function to receive the result.
+                      Will be called with the JavaScript execution result.
+                      Note: Requires registering javascript-result event handler.
 
         Returns:
             Self for chaining
+
+        Example:
+            # Without callback
+            window.execute_js("console.log('Hello')")
+
+            # With callback
+            def on_result(result):
+                print(f"Result: {result}")
+            window.execute_js("1 + 1", callback=on_result)
         """
         if self.id is not None:
-            self.dll_manager.execute_javascript(self.id, script.encode("utf-8"))
+            if callback is not None:
+                # 生成唯一的 callbackId 并注册回调
+                self._js_callback_id_counter += 1
+                callback_id = self._js_callback_id_counter
+                self._js_callbacks[callback_id] = callback
+
+                # 确保已注册 javascript-result 事件处理器
+                self._ensure_js_result_handler()
+
+                # 包装脚本以返回 callbackId
+                wrapped_script = f"""
+(function() {{
+    try {{
+        var result = eval({repr(script)});
+        if (typeof jade !== 'undefined' && jade.ipcSend) {{
+            jade.ipcSend('__js_result__', JSON.stringify({{
+                callbackId: {callback_id},
+                result: result
+            }}));
+        }}
+    }} catch (e) {{
+        if (typeof jade !== 'undefined' && jade.ipcSend) {{
+            jade.ipcSend('__js_result__', JSON.stringify({{
+                callbackId: {callback_id},
+                error: e.message
+            }}));
+        }}
+    }}
+}})();
+"""
+                self.dll_manager.execute_javascript(self.id, wrapped_script.encode("utf-8"))
+            else:
+                self.dll_manager.execute_javascript(self.id, script.encode("utf-8"))
         return self
 
-    def eval(self, script: str) -> "Window":
+    def _ensure_js_result_handler(self) -> None:
+        """确保已注册 JavaScript 结果处理器"""
+        if "__js_result__" in self._registered_jade_events:
+            return
+
+        from .ipc import IPCManager
+
+        ipc = IPCManager(self.dll_manager)
+
+        @ipc.on("__js_result__")
+        def handle_js_result(window_id: int, message: str) -> int:
+            try:
+                data = _json_loads(message) if message else {}
+                callback_id = data.get("callbackId")
+                result = data.get("result")
+                error = data.get("error")
+
+                if callback_id and callback_id in self._js_callbacks:
+                    callback = self._js_callbacks.pop(callback_id)
+                    if error:
+                        logger.error(f"JS execution error: {error}")
+                        callback(None)
+                    else:
+                        callback(result)
+            except Exception as e:
+                logger.error(f"Error handling JS result: {e}")
+            return 1
+
+        self._registered_jade_events.add("__js_result__")
+        logger.info("JavaScript result handler registered")
+
+    def eval(self, script: str, callback: Optional[Callable[[Any], Any]] = None) -> "Window":
         """Execute JavaScript (alias for execute_js)
 
         Args:
             script: JavaScript code to execute
+            callback: Optional callback function to receive the result
 
         Returns:
             Self for chaining
         """
-        return self.execute_js(script)
+        return self.execute_js(script, callback)
 
     def reload(self) -> "Window":
         """Reload the current page in the WebView
