@@ -92,6 +92,10 @@ def _extract_js_result(d: Dict) -> tuple:
     return (d.get("callbackId"), d.get("result"))
 
 
+def _extract_download(d: Dict) -> tuple:
+    return (d.get("url", ""), d.get("filename", ""))
+
+
 # Event extractors mapping: event_name -> (extractor, pass_dict_if_no_extractor)
 _EVENT_EXTRACTORS: Dict[str, Callable[[Dict], tuple]] = {
     # Window events
@@ -111,6 +115,7 @@ _EVENT_EXTRACTORS: Dict[str, Callable[[Dict], tuple]] = {
     "webview-new-window": _extract_new_window,
     "webview-page-title-updated": _extract_title,
     "favicon-updated": _extract_favicon,
+    "webview-download-started": _extract_download,  # v0.3.1+
     # Other events
     "javascript-result": _extract_js_result,
 }
@@ -270,6 +275,7 @@ class Window(EventEmitter):
         "webview-page-title-updated",  # {"title": "新标题", "window_id": 窗口ID}
         "webview-page-icon-updated",  # JSON对象
         "favicon-updated",  # {"favicon": "图标URL"}
+        "webview-download-started",  # {"url": "下载URL", ...} 可返回1阻止 (v0.3.1+)
         # 其他事件
         "theme-changed",  # {}
         "javascript-result",  # {"callbackId": 回调ID, "result": 执行结果}
@@ -533,6 +539,33 @@ class Window(EventEmitter):
                 print(f"JS result [{callback_id}]: {result}")
         """
         self._register_jade_on_event("javascript-result", callback)
+        return callback
+
+    def on_download_started(
+        self, callback: Callable[[str, str], Union[bool, int, None]]
+    ) -> Callable[[str, str], Union[bool, int, None]]:
+        """Register a callback for download started events.
+
+        Return True or 1 to prevent the download.
+
+        Note:
+            Requires JadeView DLL version 0.3.1 or above.
+
+        Args:
+            callback: Function to call when a download starts.
+                - url (str): Download URL
+                - filename (str): Suggested filename
+                Returns: True/1 to prevent download, False/0/None to allow.
+
+        Example:
+            @window.on_download_started
+            def handle_download(url: str, filename: str):
+                print(f"Download: {filename} from {url}")
+                if filename.endswith(".exe"):
+                    return True  # Block exe downloads
+                return False  # Allow download
+        """
+        self._register_jade_on_event("webview-download-started", callback)
         return callback
 
     # ==================== Internal Event Registration ====================

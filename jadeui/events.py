@@ -291,18 +291,19 @@ class Events:
         ```
 
     Window 专用装饰器列表:
-        - @window.on_resized        -> WINDOW_RESIZED
-        - @window.on_moved          -> WINDOW_MOVED
-        - @window.on_focused        -> WINDOW_FOCUSED
-        - @window.on_blurred        -> WINDOW_BLURRED
-        - @window.on_closing        -> WINDOW_CLOSING (可阻止关闭)
-        - @window.on_state_changed  -> WINDOW_STATE_CHANGED
-        - @window.on_navigate       -> WEBVIEW_WILL_NAVIGATE (可阻止导航)
-        - @window.on_page_loaded    -> WEBVIEW_DID_FINISH_LOAD
-        - @window.on_title_updated  -> WEBVIEW_PAGE_TITLE_UPDATED
-        - @window.on_new_window     -> WEBVIEW_NEW_WINDOW (可阻止新窗口)
-        - @window.on_file_dropped   -> FILE_DROP
-        - @window.on_js_result      -> JAVASCRIPT_RESULT
+        - @window.on_resized          -> WINDOW_RESIZED
+        - @window.on_moved            -> WINDOW_MOVED
+        - @window.on_focused          -> WINDOW_FOCUSED
+        - @window.on_blurred          -> WINDOW_BLURRED
+        - @window.on_closing          -> WINDOW_CLOSING (可阻止关闭)
+        - @window.on_state_changed    -> WINDOW_STATE_CHANGED
+        - @window.on_navigate         -> WEBVIEW_WILL_NAVIGATE (可阻止导航)
+        - @window.on_page_loaded      -> WEBVIEW_DID_FINISH_LOAD
+        - @window.on_title_updated    -> WEBVIEW_PAGE_TITLE_UPDATED
+        - @window.on_new_window       -> WEBVIEW_NEW_WINDOW (可阻止新窗口)
+        - @window.on_download_started -> WEBVIEW_DOWNLOAD_STARTED (可阻止下载, v0.3.1+)
+        - @window.on_file_dropped     -> FILE_DROP
+        - @window.on_js_result        -> JAVASCRIPT_RESULT
     """
 
     # ==================== 应用生命周期事件 ====================
@@ -337,6 +338,9 @@ class Events:
     WEBVIEW_PAGE_ICON_UPDATED = "webview-page-icon-updated"  # 图标更新
     FAVICON_UPDATED = "favicon-updated"  # 图标更新（别名）
     JAVASCRIPT_RESULT = "javascript-result"  # JS执行结果 -> @window.on_js_result
+    WEBVIEW_DOWNLOAD_STARTED = (
+        "webview-download-started"  # 下载开始，可返回1阻止 -> @window.on_download_started (v0.3.1+)
+    )
 
     # ==================== 文件事件 ====================
     FILE_DROP = "file-drop"  # 文件拖放到窗口 -> @window.on_file_dropped
