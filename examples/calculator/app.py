@@ -73,6 +73,7 @@ def main():
             min_width=320,
             min_height=480,
             theme=Theme.DARK,
+            maximizable=False,
         )
         window.show()
         window.set_backdrop(Backdrop.MICA)
