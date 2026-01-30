@@ -170,7 +170,11 @@ class WebViewWindowOptions(ctypes.Structure):
 
 
 class WebViewSettings(ctypes.Structure):
-    """WebView behavior settings"""
+    """WebView behavior settings
+
+    根据 JadeView 文档更新:
+    https://jade.run/guides/window-api#webviewsettings-结构体
+    """
 
     _fields_ = [
         ("autoplay", ctypes.c_int),
@@ -179,6 +183,7 @@ class WebViewSettings(ctypes.Structure):
         ("ua", ctypes.c_char_p),
         ("preload_js", ctypes.c_char_p),
         ("allow_fullscreen", ctypes.c_int),  # JadeView 0.2.1+: 控制是否允许页面全屏
+        ("postmessage_whitelist", ctypes.c_char_p),  # JadeView 1.0.2+: PostMessage 白名单
     ]
 
     def __init__(
@@ -189,6 +194,7 @@ class WebViewSettings(ctypes.Structure):
         ua: Optional[bytes] = None,
         preload_js: Optional[bytes] = None,
         allow_fullscreen: bool = True,  # 默认允许全屏
+        postmessage_whitelist: Optional[bytes] = None,  # PostMessage 白名单
     ):
         super().__init__(
             int(autoplay),
@@ -197,6 +203,7 @@ class WebViewSettings(ctypes.Structure):
             ua,
             preload_js,
             int(allow_fullscreen),
+            postmessage_whitelist,
         )
 
 

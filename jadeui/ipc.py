@@ -110,7 +110,7 @@ class IPCManager:
         else:
             # 回退到直接传递
             result = self.dll_manager.send_ipc_message(
-                window_id, channel.encode("utf-8"), message_bytes
+                    window_id, channel.encode("utf-8"), message_bytes
             )
 
         if result != 1:

@@ -202,6 +202,9 @@ class Window(EventEmitter):
                 - preload_js (str): JavaScript to run before page load
                 - allow_fullscreen (bool): Allow page to enter fullscreen (default: True)
                     Note: Requires JadeView DLL 0.2.1+
+                - postmessage_whitelist (str): PostMessage whitelist, comma-separated origins
+                    Example: "https://example.com,https://another.com"
+                    Note: Requires JadeView DLL 1.0.2+
         """
         super().__init__()
 
@@ -1366,6 +1369,7 @@ class Window(EventEmitter):
         # Prepare WebView settings
         user_agent = self._options.get("user_agent")
         preload_js = self._options.get("preload_js")
+        postmessage_whitelist = self._options.get("postmessage_whitelist")
 
         settings = WebViewSettings(
             autoplay=self._options.get("autoplay", False),
@@ -1374,6 +1378,7 @@ class Window(EventEmitter):
             ua=user_agent.encode("utf-8") if user_agent else None,
             preload_js=preload_js.encode("utf-8") if preload_js else None,
             allow_fullscreen=self._options.get("allow_fullscreen", True),
+            postmessage_whitelist=postmessage_whitelist.encode("utf-8") if postmessage_whitelist else None,
         )
 
         # Prepare URL
