@@ -55,9 +55,9 @@ build-backend = "hatchling.build"
 [tool.hatch.build.targets.wheel]
 packages = ["jadeui"]
 # artifacts 用于包含非 Python 文件（如 DLL）
-# 这些文件如果存在会被包含，不存在也不会报错
+# 只包含 .dll 文件，排除 .pdb/.lib/.exp 调试和链接文件
 artifacts = [
-    "jadeui/dll/**/*",
+    "jadeui/dll/**/*.dll",
 ]
 
 [tool.hatch.build.targets.sdist]
