@@ -6,7 +6,7 @@
     const userId = router.params.id;
 
     // 监听响应
-    jade.ipcMain('get_user:response', function(result) {
+    jade.invoke('get_user:response', function(result) {
         const user = JSON.parse(result);
         const container = document.getElementById('user-detail');
 

@@ -236,6 +236,23 @@ class Window(EventEmitter):
         self._options.setdefault("focus", True)
         self._options.setdefault("hide_window", False)
         self._options.setdefault("use_page_icon", True)
+        self._options.setdefault("borderless", False)
+        self._options.setdefault("content_protection", False)
+
+        # 参数冲突检测：borderless 与 remove_titlebar/transparent 不能同时使用
+        # 参考：JadeView DLL v1.2.0 已知问题
+        if self._options.get("borderless"):
+            conflicts = []
+            if self._options.get("remove_titlebar"):
+                conflicts.append("remove_titlebar")
+            if self._options.get("transparent"):
+                conflicts.append("transparent")
+            if conflicts:
+                raise ValueError(
+                    f"参数冲突: 'borderless=True' 不能与 {', '.join(conflicts)} 同时使用。"
+                    f"\n提示: borderless 会移除边框和系统阴影，与 remove_titlebar/transparent 功能冲突，"
+                    f"可能导致 DLL 崩溃。请选择其中一种方式。"
+                )
 
         # WebView settings
         self._options.setdefault("autoplay", False)

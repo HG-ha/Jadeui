@@ -17,7 +17,7 @@
       <ol>
         <li>Vue 应用构建为静态文件</li>
         <li>JadeUI 加载静态文件</li>
-        <li>通过 jade.ipcSend/ipcMain 与 Python 通信</li>
+        <li>通过 jade.ipcSend/invoke 与 Python 通信</li>
       </ol>
     </div>
 

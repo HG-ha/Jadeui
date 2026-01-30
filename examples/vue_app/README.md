@@ -78,7 +78,7 @@ Vue 中调用 Python 后端：
 window.jade.ipcSend('api:getUser', '')
 
 // 监听响应
-window.jade.ipcMain('api:getUser:response', (data) => {
+window.jade.invoke('api:getUser:response', (data) => {
   const user = JSON.parse(data)
   console.log(user)
 })

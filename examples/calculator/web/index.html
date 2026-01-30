@@ -462,9 +462,9 @@
 
         // 初始化 JadeView IPC
         function initJadeView() {
-            if (window.jade && window.jade.ipcMain) {
+            if (window.jade && window.jade.invoke) {
                 // 监听后端计算结果（用于日志确认）
-                jade.ipcMain('result', function(data) {
+                jade.invoke('result', function(data) {
                     console.log('后端计算结果:', data);
                 });
             } else {

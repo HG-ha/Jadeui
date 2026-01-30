@@ -495,7 +495,7 @@ class Router:
             }}
         }}
 
-        jade.ipcMain('router:update', async function(data) {{
+        jade.invoke('router:update', async function(data) {{
             try {{
                 const navData = JSON.parse(data);
                 currentPath = navData.path;
@@ -525,7 +525,7 @@ class Router:
             }}
         }});
 
-        jade.ipcMain('router:themeChanged', function(theme) {{
+        jade.invoke('router:themeChanged', function(theme) {{
             document.documentElement.setAttribute('data-theme', theme.toLowerCase());
             document.querySelectorAll('.theme-btn').forEach(btn => {{
                 btn.classList.toggle('active', btn.dataset.theme === theme.toLowerCase());

@@ -36,25 +36,26 @@ const saveResult = ref('')
 
 function fetchUser() {
   if (window.jade) {
-    // 监听响应
-    window.jade.ipcMain('api:getUser:response', (data) => {
-      user.value = JSON.parse(data)
+    // 监听响应（使用 jade.on 监听后端推送的消息）
+    window.jade.on('api:getUser:response', (data) => {
+      // data 可能是字符串或已解析的对象
+      user.value = typeof data === 'string' ? JSON.parse(data) : data
     })
-    // 发送请求
-    window.jade.ipcSend('api:getUser', '')
+    // 发送请求（使用 jade.invoke 调用后端函数）
+    window.jade.invoke('api:getUser', '')
   }
 }
 
 function saveData() {
   if (window.jade) {
-    window.jade.ipcMain('api:saveData:response', (data) => {
-      const result = JSON.parse(data)
+    window.jade.on('api:saveData:response', (data) => {
+      const result = typeof data === 'string' ? JSON.parse(data) : data
       if (result.success) {
         saveResult.value = '数据已保存!'
         setTimeout(() => saveResult.value = '', 2000)
       }
     })
-    window.jade.ipcSend('api:saveData', JSON.stringify({ test: 'data' }))
+    window.jade.invoke('api:saveData', JSON.stringify({ test: 'data' }))
   }
 }
 

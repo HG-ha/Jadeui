@@ -30,15 +30,15 @@ def main():
 
     # 计算器逻辑 - 前端已经在本地计算，这里只做日志记录
     @ipc.on("calculate")
-    def handle_calculate(window_id: int, expression: str) -> int:
+    def handle_calculate(window_id: int, expression: str) -> str:
         """记录计算历史"""
         print(f"📝 计算记录: {expression}")
-        ipc.send(window_id, "result", "logged")
-        return 1
+        ipc.send(window_id, "result", "logged")  # 现在可以安全使用
+        return '{"status": "logged"}'
 
     # 窗口操作
     @ipc.on("windowAction")
-    def handle_window_action(window_id: int, action: str) -> int:
+    def handle_window_action(window_id: int, action: str) -> str:
         print(f"🪟 窗口操作: window_id={window_id}, action={action}")
         window = Window.get_window_by_id(window_id)
         if window:
@@ -52,7 +52,7 @@ def main():
         else:
             print(f"   ❌ 未找到窗口 {window_id}")
             print(f"   活动窗口: {Window.get_all_windows()}")
-        return 1
+        return '{"success": true}'
 
     # 应用准备就绪
     @app.on_ready

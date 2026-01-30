@@ -84,6 +84,8 @@ class IPCManager:
     def send(self, window_id: int, channel: str, message: str) -> None:
         """Send an IPC message to a window
 
+        This method is safe to call from within IPC handlers.
+
         Args:
             window_id: Target window ID
             channel: IPC channel name
@@ -92,9 +94,24 @@ class IPCManager:
         Raises:
             IPCError: If message sending fails
         """
-        result = self.dll_manager.send_ipc_message(
-            window_id, channel.encode("utf-8"), message.encode("utf-8")
-        )
+        import ctypes
+
+        # 使用 jade_text_create 创建 DLL 管理的安全指针
+        # 这解决了在 IPC 回调中调用 send() 时的内存管理问题
+        message_bytes = message.encode("utf-8")
+        message_ptr = self.dll_manager.jade_text_create(message_bytes)
+
+        if message_ptr:
+            # 将 void* 转换为 c_char_p
+            message_char_p = ctypes.cast(message_ptr, ctypes.c_char_p)
+            result = self.dll_manager.send_ipc_message(
+                window_id, channel.encode("utf-8"), message_char_p
+            )
+        else:
+            # 回退到直接传递
+            result = self.dll_manager.send_ipc_message(
+                window_id, channel.encode("utf-8"), message_bytes
+            )
 
         if result != 1:
             raise IPCError(f"Failed to send IPC message on channel '{channel}'")

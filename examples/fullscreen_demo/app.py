@@ -60,7 +60,6 @@ def handle_set_fullscreen(window_id: int, message: str) -> int:
     print(f"[IPC] setFullscreen: window_id={window_id}, message={message}")
     win = Window.get_window_by_id(window_id)
     if win:
-        # 解析消息获取 fullscreen 参数
         fullscreen = message.lower() == "true" if message else False
         win.set_fullscreen(fullscreen)
         send_state_update(window_id)

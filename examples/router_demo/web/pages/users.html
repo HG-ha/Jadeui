@@ -6,7 +6,7 @@
 
 <script>
     // 监听响应
-    jade.ipcMain('get_users:response', function(result) {
+    jade.invoke('get_users:response', function(result) {
         const users = JSON.parse(result);
         const container = document.getElementById('user-list');
 

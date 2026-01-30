@@ -80,9 +80,10 @@
         }
 
         // ========== 监听路由更新 ==========
-        jade.ipcMain('router:update', async function(data) {
+        jade.on('router:update', async function(data) {
             try {
-                const navData = JSON.parse(data);
+                // data 可能是字符串或已解析的对象
+                const navData = typeof data === 'string' ? JSON.parse(data) : data;
                 router.params = navData.params || {};
 
                 // 更新标题
@@ -112,9 +113,10 @@
         });
 
         // ========== 监听主题变化 ==========
-        jade.ipcMain('router:themeChanged', function(theme) {
-            document.documentElement.setAttribute('data-theme', theme.toLowerCase());
-            updateThemeIcon(theme.toLowerCase());
+        jade.on('router:themeChanged', function(theme) {
+            const themeValue = typeof theme === 'string' ? theme : theme.theme || 'dark';
+            document.documentElement.setAttribute('data-theme', themeValue.toLowerCase());
+            updateThemeIcon(themeValue.toLowerCase());
         });
 
         // ========== 通知后端准备好了 ==========

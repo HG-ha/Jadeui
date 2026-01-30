@@ -47,7 +47,7 @@ custom_template/
 3. 发送 `router:ready` 通知后端
 
 ```javascript
-jade.ipcMain('router:update', async function(data) {
+jade.invoke('router:update', async function(data) {
     const navData = JSON.parse(data);
     // 加载页面内容到 #page-content
 });

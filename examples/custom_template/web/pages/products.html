@@ -5,9 +5,10 @@
 </div>
 
 <script>
-    // 从后端获取产品数据
-    jade.ipcMain('get_products:response', function(result) {
-        const products = JSON.parse(result);
+    // 监听后端返回的产品数据
+    jade.on('get_products:response', function(result) {
+        // result 可能是字符串或已解析的对象
+        const products = typeof result === 'string' ? JSON.parse(result) : result;
         const container = document.getElementById('product-list');
         
         container.innerHTML = products.map(p => `
@@ -19,6 +20,7 @@
         `).join('');
     });
 
-    jade.ipcSend('get_products', '');
+    // 请求产品数据
+    jade.invoke('get_products', '');
 </script>
 

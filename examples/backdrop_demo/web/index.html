@@ -313,9 +313,11 @@
         const dropZone = document.getElementById('drop-zone');
         
         // 监听来自后端的文件拖放事件
-        jade.ipcMain('fileDrop', function(data) {
+        // 注意：使用 jade.on() 监听后端通过 ipc.send() 发送的消息
+        jade.on('fileDrop', function(data) {
             try {
-                const fileInfo = JSON.parse(data);
+                // data 可能是字符串或已解析的对象
+                const fileInfo = typeof data === 'string' ? JSON.parse(data) : data;
                 console.log('收到文件:', fileInfo);
                 
                 // 新格式: { files: [{path, name, isDir}, ...], x, y }

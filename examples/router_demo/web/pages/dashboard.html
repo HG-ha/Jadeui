@@ -17,7 +17,7 @@
 
 <script>
     // 监听响应
-    jade.ipcMain('get_stats:response', function(result) {
+    jade.invoke('get_stats:response', function(result) {
         const stats = JSON.parse(result);
         document.getElementById('server-time').textContent = '服务器时间: ' + stats.server_time;
         document.getElementById('stat-visits').textContent = stats.today_visits.toLocaleString();

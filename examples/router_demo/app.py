@@ -35,7 +35,6 @@ users_db = [
 @router.ipc.on("get_users")
 def get_users(window_id, data):
     """获取用户列表"""
-    # 发送响应回前端
     router.ipc.send(window_id, "get_users:response", json.dumps(users_db))
     return 1
 
