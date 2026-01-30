@@ -257,6 +257,20 @@ class Window(EventEmitter):
                     f"可能导致 DLL 崩溃。请选择其中一种方式。"
                 )
 
+        # 参数冲突检测：content_protection 与 maximizable/minimizable 冲突
+        # 参考：JadeView DLL 已知问题
+        if self._options.get("content_protection"):
+            conflicts = []
+            if self._options.get("maximizable", True):  # 默认为 True
+                conflicts.append("maximizable")
+            if self._options.get("minimizable", True):  # 默认为 True
+                conflicts.append("minimizable")
+            if conflicts:
+                raise ValueError(
+                    f"参数冲突: 'content_protection=True' 不能与 {', '.join(conflicts)} 同时使用。"
+                    f"\n提示: 启用内容保护时，请设置 maximizable=False 和 minimizable=False。"
+                )
+
         # WebView settings
         self._options.setdefault("autoplay", False)
         self._options.setdefault("background_throttling", False)
@@ -1378,7 +1392,9 @@ class Window(EventEmitter):
             ua=user_agent.encode("utf-8") if user_agent else None,
             preload_js=preload_js.encode("utf-8") if preload_js else None,
             allow_fullscreen=self._options.get("allow_fullscreen", True),
-            postmessage_whitelist=postmessage_whitelist.encode("utf-8") if postmessage_whitelist else None,
+            postmessage_whitelist=postmessage_whitelist.encode("utf-8")
+            if postmessage_whitelist
+            else None,
         )
 
         # Prepare URL
