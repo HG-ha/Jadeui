@@ -121,3 +121,38 @@ def jade_text_free(ptr: bytes) -> None:
             dll.jade_text_free(ptr)
     except Exception:
         pass
+
+
+# ==================== 缓存清理工具 ====================
+
+
+def clean_cache() -> None:
+    """清理 jadeui 包的 __pycache__ 缓存
+
+    当遇到奇怪的崩溃问题时，可以运行此命令清理缓存：
+        jadeui-clean
+
+    或在 Python 中调用：
+        from jadeui.utils import clean_cache
+        clean_cache()
+    """
+    import shutil
+
+    # 获取 jadeui 包的路径
+    package_dir = Path(__file__).parent
+
+    # 清理 jadeui 目录下的所有 __pycache__
+    count = 0
+    for cache_dir in package_dir.rglob("__pycache__"):
+        if cache_dir.is_dir():
+            try:
+                shutil.rmtree(cache_dir)
+                count += 1
+                print(f"已清理: {cache_dir}")
+            except Exception as e:
+                print(f"清理失败: {cache_dir} - {e}")
+
+    if count > 0:
+        print(f"\n✅ 共清理 {count} 个缓存目录")
+    else:
+        print("没有找到需要清理的缓存")

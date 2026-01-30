@@ -15,9 +15,7 @@ import os
 import platform
 import time
 
-from jadeui import Backdrop, JadeUIApp, Theme, Window
-from jadeui.ipc import IPCManager
-from jadeui.server import LocalServer
+from jadeui import Backdrop, IPCManager, JadeUIApp, LocalServer, Theme, Window
 
 # 获取脚本所在目录
 script_dir = os.path.dirname(os.path.abspath(__file__))

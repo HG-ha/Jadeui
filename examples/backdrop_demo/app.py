@@ -13,14 +13,8 @@ JadeUI 背景材料演示
 
 import json
 import os
-import sys
 
-sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
-
-from jadeui import Events, JadeUIApp, Window
-from jadeui.ipc import IPCManager
-from jadeui.server import LocalServer
-from jadeui.window import Backdrop, Theme
+from jadeui import Backdrop, Events, IPCManager, JadeUIApp, LocalServer, Theme, Window
 
 app = JadeUIApp()
 ipc = IPCManager()

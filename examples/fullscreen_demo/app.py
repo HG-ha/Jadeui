@@ -14,8 +14,7 @@ JadeUI 全屏功能示例
 
 import json
 
-from jadeui import Backdrop, Theme, Window
-from jadeui.ipc import IPCManager
+from jadeui import Backdrop, IPCManager, Theme, Window
 
 # 创建窗口
 window = Window(

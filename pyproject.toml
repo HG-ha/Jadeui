@@ -41,6 +41,7 @@ dev = [
 
 [project.scripts]
 jadeui-download = "jadeui.downloader:cli"
+jadeui-clean = "jadeui.utils:clean_cache"
 
 [project.urls]
 Homepage = "https://jade.run"
