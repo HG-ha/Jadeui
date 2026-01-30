@@ -119,7 +119,7 @@ def get_jadeui_dll_path() -> Path | None:
 
 def get_jadeui_dll_files(dll_dir: Path) -> list[tuple[Path, str]]:
     """
-    获取 DLL 目录中所有需要包含的文件
+    获取 DLL 目录中需要包含的文件（仅 .dll 文件）
 
     Args:
         dll_dir: DLL 目录路径
@@ -130,9 +130,9 @@ def get_jadeui_dll_files(dll_dir: Path) -> list[tuple[Path, str]]:
     files = []
     dest_dir = dll_dir.name  # 如 "JadeView_win_x64_static_v0.1.2"
 
-    # 包含目录中的所有文件
+    # 只包含 .dll 文件，排除 .pdb/.lib/.exp 等调试和链接文件
     for file_path in dll_dir.iterdir():
-        if file_path.is_file():
+        if file_path.is_file() and file_path.suffix.lower() == ".dll":
             # 格式: 源文件=目标文件
             dest_path = f"{dest_dir}/{file_path.name}"
             files.append((file_path, dest_path))
