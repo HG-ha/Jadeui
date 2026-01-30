@@ -38,10 +38,7 @@ def send_state_update(window_id: int):
     """发送状态更新到前端"""
     win = Window.get_window_by_id(window_id)
     if win:
-        state = json.dumps({
-            "isFullscreen": win.is_fullscreen,
-            "isMaximized": win.is_maximized
-        })
+        state = json.dumps({"isFullscreen": win.is_fullscreen, "isMaximized": win.is_maximized})
         ipc.send(window_id, "fullscreenState", state)
 
 
@@ -81,4 +78,3 @@ def handle_get_state(window_id: int, message: str) -> int:
 
 # 运行 - 自动检测 web 目录并启动服务器
 window.run()
-

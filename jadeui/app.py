@@ -221,36 +221,43 @@ class JadeUIApp(EventEmitter):
             return None
 
     def _register_global_events(self) -> None:
-        """Register global event handlers with the DLL"""
+        """Register global event handlers with the DLL
 
-        # Create app-ready callback
+        事件回调签名: (window_id, event_data) -> void
+        """
+
+        # Create app-ready callback (返回 void)
         @AppReadyCallback
-        def app_ready_callback(success: int, reason: ctypes.c_char_p) -> int:
-            reason_str = reason.decode("utf-8") if reason else "unknown"
-            return self._on_app_ready(success, reason_str)
+        def app_ready_callback(window_id: int, event_data: ctypes.c_char_p):
+            data_str = event_data.decode("utf-8") if event_data else ""
+            # app-ready 事件
+            if data_str.startswith("success") or "app-ready" in data_str:
+                self._on_app_ready(1, "success")
+            else:
+                self._on_app_ready(0, data_str)
 
-        # Create window-all-closed callback
+        # Create window-all-closed callback (返回 void)
         @WindowAllClosedCallback
-        def window_all_closed_callback() -> int:
-            return self._on_window_all_closed()
+        def window_all_closed_callback(window_id: int, event_data: ctypes.c_char_p):
+            self._on_window_all_closed()
 
         # Store references to prevent garbage collection
         self._callbacks.append(app_ready_callback)
         self._callbacks.append(window_all_closed_callback)
 
-        # Register with DLL
-        self.dll_manager.jade_on(
+        # Register with DLL (v1.0+: jade_on returns callback_id)
+        self._app_ready_callback_id = self.dll_manager.jade_on(
             b"app-ready",
-            ctypes.cast(app_ready_callback, ctypes.c_void_p),
+            app_ready_callback,
         )
-        self.dll_manager.jade_on(
+        self._window_all_closed_callback_id = self.dll_manager.jade_on(
             b"window-all-closed",
-            ctypes.cast(window_all_closed_callback, ctypes.c_void_p),
+            window_all_closed_callback,
         )
 
         logger.info("Global event handlers registered")
 
-    def _on_app_ready(self, success: int, reason: str) -> int:
+    def _on_app_ready(self, success: int, reason: str) -> None:
         """Handle app-ready event"""
         try:
             if success == 1 and reason == "success":
@@ -264,15 +271,13 @@ class JadeUIApp(EventEmitter):
                 )
         except Exception as e:
             logger.error(f"Error in app-ready handler: {e}")
-        return 0
 
-    def _on_window_all_closed(self) -> int:
+    def _on_window_all_closed(self) -> None:
         """Handle window-all-closed event"""
         logger.info("All windows closed")
         self.emit("window-all-closed")
         # Default behavior: cleanup when all windows are closed
         self._cleanup()
-        return 0
 
     def run(self) -> None:
         """Start the application message loop

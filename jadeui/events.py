@@ -291,19 +291,24 @@ class Events:
         ```
 
     Window 专用装饰器列表:
-        - @window.on_resized          -> WINDOW_RESIZED
-        - @window.on_moved            -> WINDOW_MOVED
-        - @window.on_focused          -> WINDOW_FOCUSED
-        - @window.on_blurred          -> WINDOW_BLURRED
-        - @window.on_closing          -> WINDOW_CLOSING (可阻止关闭)
-        - @window.on_state_changed    -> WINDOW_STATE_CHANGED
-        - @window.on_navigate         -> WEBVIEW_WILL_NAVIGATE (可阻止导航)
-        - @window.on_page_loaded      -> WEBVIEW_DID_FINISH_LOAD
-        - @window.on_title_updated    -> WEBVIEW_PAGE_TITLE_UPDATED
-        - @window.on_new_window       -> WEBVIEW_NEW_WINDOW (可阻止新窗口)
-        - @window.on_download_started -> WEBVIEW_DOWNLOAD_STARTED (可阻止下载, v0.3.1+)
-        - @window.on_file_dropped     -> FILE_DROP
-        - @window.on_js_result        -> JAVASCRIPT_RESULT
+        - @window.on_resized           -> WINDOW_RESIZED
+        - @window.on_moved             -> WINDOW_MOVED
+        - @window.on_focused           -> WINDOW_FOCUSED
+        - @window.on_blurred           -> WINDOW_BLURRED
+        - @window.on_closing           -> WINDOW_CLOSING (可阻止关闭)
+        - @window.on_state_changed     -> WINDOW_STATE_CHANGED
+        - @window.on_fullscreen_changed -> WINDOW_FULLSCREEN (v1.2+)
+        - @window.on_navigate          -> WEBVIEW_WILL_NAVIGATE (可阻止导航)
+        - @window.on_page_loaded       -> WEBVIEW_DID_FINISH_LOAD
+        - @window.on_title_updated     -> WEBVIEW_PAGE_TITLE_UPDATED
+        - @window.on_new_window        -> WEBVIEW_NEW_WINDOW (可阻止新窗口)
+        - @window.on_download_started  -> WEBVIEW_DOWNLOAD_STARTED (可阻止下载, v0.3.1+)
+        - @window.on_file_dropped      -> FILE_DROP
+        - @window.on_js_result         -> JAVASCRIPT_RESULT
+
+    回调返回值说明:
+        - 返回 1 或 True 阻止操作
+        - 返回 0 或 False/None 允许操作
     """
 
     # ==================== 应用生命周期事件 ====================
@@ -317,9 +322,10 @@ class Events:
     WINDOW_CREATED = "window-created"  # 窗口创建完成
     APP_WINDOW_CREATED = "app-window-created"  # 同上，别名
     WINDOW_CLOSED = "window-closed"  # 窗口已关闭
-    WINDOW_CLOSING = "window-closing"  # 窗口即将关闭，可返回1阻止 -> @window.on_closing
+    WINDOW_CLOSING = "window-closing"  # 窗口即将关闭，可返回"1"阻止 -> @window.on_closing
     WINDOW_RESIZED = "window-resized"  # 窗口大小改变 -> @window.on_resized
     WINDOW_STATE_CHANGED = "window-state-changed"  # 最大化/还原状态改变 -> @window.on_state_changed
+    WINDOW_FULLSCREEN = "window-fullscreen"  # 全屏状态改变 (v1.2+) -> @window.on_fullscreen_changed
     WINDOW_MOVED = "window-moved"  # 窗口位置改变 -> @window.on_moved
     WINDOW_FOCUSED = "window-focused"  # 窗口获得焦点 -> @window.on_focused
     WINDOW_BLURRED = "window-blurred"  # 窗口失去焦点 -> @window.on_blurred
@@ -338,9 +344,8 @@ class Events:
     WEBVIEW_PAGE_ICON_UPDATED = "webview-page-icon-updated"  # 图标更新
     FAVICON_UPDATED = "favicon-updated"  # 图标更新（别名）
     JAVASCRIPT_RESULT = "javascript-result"  # JS执行结果 -> @window.on_js_result
-    WEBVIEW_DOWNLOAD_STARTED = (
-        "webview-download-started"  # 下载开始，可返回1阻止 -> @window.on_download_started (v0.3.1+)
-    )
+    WEBVIEW_DOWNLOAD_STARTED = "webview-download-started"  # 下载开始，可返回"1"阻止 -> @window.on_download_started (v0.3.1+)
+    POSTMESSAGE_RECEIVED = "postmessage-received"  # 接收 PostMessage 消息 (v1.0.2+)
 
     # ==================== 文件事件 ====================
     FILE_DROP = "file-drop"  # 文件拖放到窗口 -> @window.on_file_dropped

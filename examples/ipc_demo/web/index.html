@@ -1,0 +1,360 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JadeUI IPC Demo</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        :root {
+            --primary: #667eea;
+            --primary-hover: #5a6fd6;
+            --bg-glass: rgba(255, 255, 255, 0.08);
+            --border: rgba(255, 255, 255, 0.12);
+            --text: rgba(255, 255, 255, 0.9);
+            --text-muted: rgba(255, 255, 255, 0.6);
+        }
+
+        html, body {
+            height: 100%;
+            overflow: hidden;
+        }
+
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: transparent;
+            display: flex;
+            flex-direction: column;
+            user-select: none;
+            color: var(--text);
+        }
+
+        .titlebar {
+            position: fixed;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 36px;
+            background: var(--bg-glass);
+            backdrop-filter: blur(20px);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 0 12px;
+            -webkit-app-region: drag;
+            border-bottom: 1px solid var(--border);
+            z-index: 1000;
+        }
+
+        .titlebar-title {
+            font-size: 12px;
+            opacity: 0.8;
+        }
+
+        .titlebar-controls {
+            display: flex;
+            gap: 8px;
+            -webkit-app-region: no-drag;
+        }
+
+        .titlebar-btn {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            border: none;
+            cursor: pointer;
+            transition: transform 0.1s;
+        }
+
+        .titlebar-btn:hover { transform: scale(1.1); }
+        .titlebar-btn.close { background: #ff5f57; }
+        .titlebar-btn.minimize { background: #febc2e; }
+        .titlebar-btn.maximize { background: #28c840; }
+
+        .content {
+            flex: 1;
+            padding: 24px;
+            margin-top: 36px; /* 标题栏高度 */
+            overflow-y: auto;
+        }
+
+        h1 {
+            font-size: 1.8rem;
+            font-weight: 600;
+            margin-bottom: 8px;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            color: var(--text-muted);
+            margin-bottom: 24px;
+        }
+
+        .card {
+            background: var(--bg-glass);
+            border: 1px solid var(--border);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .card h2 {
+            font-size: 1rem;
+            font-weight: 600;
+            margin-bottom: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+            flex-wrap: wrap;
+        }
+
+        input, select {
+            padding: 10px 14px;
+            border: 1px solid var(--border);
+            border-radius: 8px;
+            background: rgba(0, 0, 0, 0.2);
+            color: var(--text);
+            font-size: 14px;
+            outline: none;
+        }
+
+        input:focus, select:focus {
+            border-color: var(--primary);
+        }
+
+        input::placeholder {
+            color: var(--text-muted);
+        }
+
+        .btn {
+            padding: 10px 20px;
+            border: none;
+            border-radius: 8px;
+            font-size: 14px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.15s;
+            background: var(--primary);
+            color: white;
+        }
+
+        .btn:hover {
+            background: var(--primary-hover);
+            transform: translateY(-1px);
+        }
+
+        .btn:active {
+            transform: translateY(0);
+        }
+
+        .result {
+            margin-top: 16px;
+            padding: 16px;
+            background: rgba(0, 0, 0, 0.2);
+            border-radius: 8px;
+            font-family: 'Consolas', 'Monaco', monospace;
+            font-size: 13px;
+            white-space: pre-wrap;
+            word-break: break-all;
+            display: none;
+        }
+
+        .result.show {
+            display: block;
+        }
+
+        .result.success {
+            border-left: 3px solid #10b981;
+        }
+
+        .result.error {
+            border-left: 3px solid #ef4444;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 16px;
+            height: 16px;
+            border: 2px solid rgba(255, 255, 255, 0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            margin-right: 8px;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+
+        .info-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 12px;
+        }
+
+        .info-item {
+            padding: 12px;
+            background: rgba(0, 0, 0, 0.15);
+            border-radius: 8px;
+        }
+
+        .info-label {
+            font-size: 11px;
+            color: var(--text-muted);
+            text-transform: uppercase;
+            margin-bottom: 4px;
+        }
+
+        .info-value {
+            font-size: 14px;
+            font-weight: 500;
+        }
+    </style>
+</head>
+<body>
+    <div class="titlebar">
+        <span class="titlebar-title">🚀 JadeUI IPC Demo</span>
+        <div class="titlebar-controls">
+            <button class="titlebar-btn minimize" onclick="jade.invoke('windowAction', 'minimize')"></button>
+            <button class="titlebar-btn maximize" onclick="jade.invoke('windowAction', 'maximize')"></button>
+            <button class="titlebar-btn close" onclick="jade.invoke('windowAction', 'close')"></button>
+        </div>
+    </div>
+
+    <div class="content">
+        <h1>🎉 前后端通信演示</h1>
+        <p class="subtitle">使用 jade.invoke() 调用 Python 后端并获取返回值</p>
+
+        <!-- 问候示例 -->
+        <div class="card">
+            <h2>👋 问候示例</h2>
+            <div class="input-group">
+                <input type="text" id="greet-name" placeholder="输入你的名字..." style="flex: 1;">
+                <button class="btn" onclick="sendGreeting()">发送问候</button>
+            </div>
+            <div class="result" id="greet-result"></div>
+        </div>
+
+        <!-- 计算器示例 -->
+        <div class="card">
+            <h2>🔢 计算器示例</h2>
+            <div class="input-group">
+                <input type="number" id="calc-a" placeholder="数字 A" style="width: 100px;" value="10">
+                <select id="calc-op" style="width: 60px;">
+                    <option value="+">+</option>
+                    <option value="-">−</option>
+                    <option value="*">×</option>
+                    <option value="/">÷</option>
+                </select>
+                <input type="number" id="calc-b" placeholder="数字 B" style="width: 100px;" value="5">
+                <button class="btn" onclick="calculate()">计算</button>
+            </div>
+            <div class="result" id="calc-result"></div>
+        </div>
+
+        <!-- 系统信息示例 -->
+        <div class="card">
+            <h2>💻 系统信息</h2>
+            <button class="btn" onclick="getSystemInfo()" style="margin-bottom: 16px;">获取系统信息</button>
+            <div class="info-grid" id="system-info"></div>
+        </div>
+    </div>
+
+    <script>
+        // 显示结果
+        function showResult(elementId, data, isError = false) {
+            const el = document.getElementById(elementId);
+            el.textContent = JSON.stringify(data, null, 2);
+            el.className = 'result show ' + (isError ? 'error' : 'success');
+        }
+
+        // 解析结果（兼容字符串和对象）
+        function parseResult(result) {
+            if (typeof result === 'string') {
+                return JSON.parse(result);
+            }
+            return result;
+        }
+
+        // 问候示例
+        async function sendGreeting() {
+            const name = document.getElementById('greet-name').value || 'World';
+            try {
+                const result = await jade.invoke('greet', name);
+                console.log('greet result:', result, typeof result);
+                const data = parseResult(result);
+                showResult('greet-result', data);
+            } catch (e) {
+                showResult('greet-result', { error: e.message }, true);
+            }
+        }
+
+        // 计算器示例
+        async function calculate() {
+            const a = document.getElementById('calc-a').value;
+            const b = document.getElementById('calc-b').value;
+            const op = document.getElementById('calc-op').value;
+            
+            try {
+                const result = await jade.invoke('calculate', JSON.stringify({ a, b, op }));
+                console.log('calculate result:', result, typeof result);
+                const data = parseResult(result);
+                showResult('calc-result', data, !data.success);
+            } catch (e) {
+                showResult('calc-result', { error: e.message }, true);
+            }
+        }
+
+        // 系统信息示例
+        async function getSystemInfo() {
+            const container = document.getElementById('system-info');
+            container.innerHTML = '<div class="info-item"><span class="loading"></span> 加载中...</div>';
+            
+            try {
+                const result = await jade.invoke('getSystemInfo', '');
+                console.log('getSystemInfo result:', result, typeof result);
+                const data = parseResult(result);
+                
+                const labels = {
+                    python_version: 'Python 版本',
+                    os: '操作系统',
+                    os_version: '系统版本',
+                    machine: '机器架构',
+                    processor: '处理器',
+                    cwd: '工作目录'
+                };
+                
+                container.innerHTML = Object.entries(data).map(([key, value]) => `
+                    <div class="info-item">
+                        <div class="info-label">${labels[key] || key}</div>
+                        <div class="info-value">${value}</div>
+                    </div>
+                `).join('');
+            } catch (e) {
+                container.innerHTML = `<div class="info-item" style="border-left: 3px solid #ef4444;">
+                    <div class="info-label">错误</div>
+                    <div class="info-value">${e.message}</div>
+                </div>`;
+            }
+        }
+
+        // 页面加载时自动获取系统信息
+        document.addEventListener('DOMContentLoaded', () => {
+            setTimeout(getSystemInfo, 500);
+        });
+    </script>
+</body>
+</html>

@@ -108,7 +108,11 @@ class DLLManager:
             raise DLLLoadError(f"DLL not found at: {self.dll_path}")
 
         try:
-            self.dll = ctypes.CDLL(self.dll_path)
+            # 使用 WinDLL (stdcall) - JadeView DLL 使用 stdcall 调用约定
+            if sys.platform == "win32":
+                self.dll = ctypes.WinDLL(self.dll_path)
+            else:
+                self.dll = ctypes.CDLL(self.dll_path)
             self._bind_functions()
             self._loaded = True
             logger.info(f"DLL loaded from: {self.dll_path}")
@@ -169,11 +173,11 @@ class DLLManager:
             required=True,
         )
 
-        # Event handling
+        # Event handling (v1.0+ jade_on returns callback_id)
         self._try_bind(
             "jade_on",
             [ctypes.c_char_p, ctypes.c_void_p],
-            None,
+            ctypes.c_uint32,  # Returns callback_id for jade_off
             required=True,
         )
 
@@ -285,8 +289,27 @@ class DLLManager:
             ctypes.c_int,
         )
 
-        # Event system
-        self._try_bind("jade_off", [ctypes.c_char_p], None)
+        # Event system (v1.0+ jade_off requires callback_id)
+        self._try_bind(
+            "jade_off",
+            [ctypes.c_char_p, ctypes.c_uint32],  # event_name, callback_id
+            ctypes.c_int,
+        )
+
+        # Memory management tools (v1.2.0+)
+        # jade_text_create: Create a safe text pointer for callback return values
+        # 注意: restype 必须是 c_void_p，不能是 c_char_p，否则 ctypes 会自动转换为 bytes
+        self._try_bind(
+            "jade_text_create",
+            [ctypes.c_char_p],
+            ctypes.c_void_p,  # Returns void* pointer (不能用 c_char_p!)
+        )
+        # jade_text_free: Free a text pointer created by jade_text_create
+        self._try_bind(
+            "jade_text_free",
+            [ctypes.c_char_p],
+            None,
+        )
 
         # Window state queries
         self._try_bind("is_window_maximized", [ctypes.c_uint32], ctypes.c_int)

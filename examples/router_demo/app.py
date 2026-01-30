@@ -31,6 +31,7 @@ users_db = [
 
 # ============ IPC 处理器 ============
 
+
 @router.ipc.on("get_users")
 def get_users(window_id, data):
     """获取用户列表"""
@@ -54,6 +55,7 @@ def get_user(window_id, user_id):
 def get_stats(window_id, data):
     """获取统计数据"""
     import datetime
+
     stats = {
         "server_time": datetime.datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
         "total_users": len(users_db),
@@ -65,6 +67,7 @@ def get_stats(window_id, data):
 
 
 # ============ 应用启动 ============
+
 
 @app.on_ready
 def on_ready():
@@ -92,9 +95,15 @@ def on_ready():
     def on_move(x: int, y: int):
         """窗口移动 - IDE 会提示 x 和 y 参数"""
         print(f"窗口移动: x={x}, y={y}")
-    
+
     # 测试注册一个窗口大小事件, 不使用类型化装饰器
-    window.on("window-resized", lambda width, height: print(f"窗口大小变化 不使用类型化装饰器: 宽度={width}, 高度={height}"))
+    window.on(
+        "window-resized",
+        lambda width, height: print(
+            f"窗口大小变化 不使用类型化装饰器: 宽度={width}, 高度={height}"
+        ),
+    )
+
 
 if __name__ == "__main__":
     app.initialize()

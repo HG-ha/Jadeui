@@ -45,14 +45,14 @@
         // ========== 路由器 ==========
         const router = {
             go: function(path) {
-                jade.ipcSend('router:navigate', path);
+                jade.invoke('router:navigate', path);
             },
             params: {},
         };
 
         // ========== 窗口控制 ==========
         function windowAction(action) {
-            jade.ipcSend('windowAction', action);
+            jade.invoke('windowAction', action);
         }
 
         // ========== 主题切换 ==========
@@ -62,7 +62,7 @@
             const next = current === 'dark' ? 'light' : 'dark';
             html.setAttribute('data-theme', next);
             updateThemeIcon(next);
-            jade.ipcSend('router:setTheme', next);
+            jade.invoke('router:setTheme', next);
         }
 
         function updateThemeIcon(theme) {
@@ -118,7 +118,7 @@
         });
 
         // ========== 通知后端准备好了 ==========
-        jade.ipcSend('router:ready', '');
+        jade.invoke('router:ready', '');
     </script>
 </body>
 </html>

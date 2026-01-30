@@ -272,9 +272,9 @@
     <div class="titlebar">
         <span class="titlebar-title">🖥️ 全屏功能演示</span>
         <div class="titlebar-controls">
-            <button class="titlebar-btn minimize" onclick="jade.ipcSend('windowAction', 'minimize')"></button>
-            <button class="titlebar-btn maximize" onclick="jade.ipcSend('windowAction', 'maximize')"></button>
-            <button class="titlebar-btn close" onclick="jade.ipcSend('windowAction', 'close')"></button>
+            <button class="titlebar-btn minimize" onclick="jade.invoke('windowAction', 'minimize')"></button>
+            <button class="titlebar-btn maximize" onclick="jade.invoke('windowAction', 'maximize')"></button>
+            <button class="titlebar-btn close" onclick="jade.invoke('windowAction', 'close')"></button>
         </div>
     </div>
 
@@ -365,25 +365,25 @@
         // 切换全屏
         function toggleFullscreen() {
             console.log('切换全屏...');
-            jade.ipcSend('toggleFullscreen', '');
+            jade.invoke('toggleFullscreen', '');
         }
 
         // 进入全屏
         function enterFullscreen() {
             console.log('进入全屏...');
-            jade.ipcSend('setFullscreen', 'true');
+            jade.invoke('setFullscreen', 'true');
         }
 
         // 退出全屏
         function exitFullscreen() {
             console.log('退出全屏...');
-            jade.ipcSend('setFullscreen', 'false');
+            jade.invoke('setFullscreen', 'false');
         }
 
         // 刷新状态
         function refreshState() {
             console.log('刷新状态...');
-            jade.ipcSend('getFullscreenState', '');
+            jade.invoke('getFullscreenState', '');
         }
 
         // JS 全屏 (使用浏览器 Fullscreen API，受 allow_fullscreen 控制)

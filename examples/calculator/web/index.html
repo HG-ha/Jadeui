@@ -396,8 +396,8 @@
                 updateDisplay();
 
                 // 发送到后端（可选，用于日志）
-                if (window.jade && window.jade.ipcSend) {
-                    jade.ipcSend('calculate', state.history.slice(0, -2));
+                if (window.jade && window.jade.invoke) {
+                    jade.invoke('calculate', state.history.slice(0, -2));
                 }
             }
         }
@@ -455,8 +455,8 @@
 
         // 窗口操作
         function windowAction(action) {
-            if (window.jade && window.jade.ipcSend) {
-                jade.ipcSend('windowAction', action);
+            if (window.jade && window.jade.invoke) {
+                jade.invoke('windowAction', action);
             }
         }
 

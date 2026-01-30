@@ -278,7 +278,7 @@
         };
         
         function setBackdrop(backdrop) {
-            jade.ipcSend('setBackdrop', backdrop);
+            jade.invoke('setBackdrop', backdrop);
             
             // 更新按钮状态
             document.querySelectorAll('#backdrop-options .option-btn').forEach(btn => {
@@ -296,7 +296,7 @@
         }
         
         function setTheme(theme) {
-            jade.ipcSend('setTheme', theme);
+            jade.invoke('setTheme', theme);
             document.documentElement.setAttribute('data-theme', theme);
             
             // 更新按钮状态
@@ -306,7 +306,7 @@
         }
         
         function windowAction(action) {
-            jade.ipcSend('windowAction', action);
+            jade.invoke('windowAction', action);
         }
         
         // 文件拖放处理

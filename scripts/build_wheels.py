@@ -86,9 +86,7 @@ def download_dll(arch: str, version: str) -> bool:
         with tempfile.NamedTemporaryFile(suffix=".zip", delete=False) as tmp_file:
             tmp_path = Path(tmp_file.name)
 
-            request = urllib.request.Request(
-                url, headers={"User-Agent": f"jadeui-build/{version}"}
-            )
+            request = urllib.request.Request(url, headers={"User-Agent": f"jadeui-build/{version}"})
 
             with urllib.request.urlopen(request, timeout=60) as response:
                 total_size = int(response.headers.get("Content-Length", 0))
@@ -111,8 +109,8 @@ def download_dll(arch: str, version: str) -> bool:
 
         # Extract to temp directory first
         temp_extract = ROOT_DIR / f"temp_extract_{arch}"
-        print(f"[*] Extracting...")
-        
+        print("[*] Extracting...")
+
         if temp_extract.exists():
             shutil.rmtree(temp_extract)
 
@@ -355,11 +353,11 @@ def main():
     # Architectures to build (x86 is optional, uncomment if needed)
     # 构建的架构列表 (x86 可选，如需支持请取消注释)
     BUILD_ARCHS = ["x64", "arm64"]  # Add "x86" if 32-bit support needed
-    
+
     # Check or download DLL
     arch_config = get_arch_config(dll_version)
     arch_status = {}
-    
+
     for arch in BUILD_ARCHS:
         has_dll = (ROOT_DIR / arch_config[arch]["src_dir"]).exists()
         if not has_dll:

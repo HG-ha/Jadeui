@@ -26,6 +26,7 @@ router.page("/contact", "pages/contact.html", title="联系我们")
 
 # ============ IPC 处理器 ============
 
+
 @router.ipc.on("get_products")
 def get_products(window_id, data):
     products = [
@@ -38,6 +39,7 @@ def get_products(window_id, data):
 
 
 # ============ 应用启动 ============
+
 
 @app.on_ready
 def on_ready():
@@ -56,4 +58,3 @@ def on_ready():
 if __name__ == "__main__":
     app.initialize()
     app.run()
-

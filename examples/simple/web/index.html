@@ -93,9 +93,9 @@
     <div class="titlebar">
         <span class="titlebar-title">JadeUI Simple Demo</span>
         <div class="titlebar-controls">
-            <button class="titlebar-btn minimize" onclick="jade.ipcSend('windowAction', 'minimize')"></button>
-            <button class="titlebar-btn maximize" onclick="jade.ipcSend('windowAction', 'maximize')"></button>
-            <button class="titlebar-btn close" onclick="jade.ipcSend('windowAction', 'close')"></button>
+            <button class="titlebar-btn minimize" onclick="jade.invoke('windowAction', 'minimize')"></button>
+            <button class="titlebar-btn maximize" onclick="jade.invoke('windowAction', 'maximize')"></button>
+            <button class="titlebar-btn close" onclick="jade.invoke('windowAction', 'close')"></button>
         </div>
     </div>
 

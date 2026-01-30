@@ -7,6 +7,7 @@ Helper functions and utilities for JadeUI.
 import os
 import sys
 from pathlib import Path
+from typing import Optional
 
 
 def get_resource_path(relative_path: str) -> str:
@@ -66,3 +67,57 @@ def ensure_directory(path: str) -> None:
         path: Directory path
     """
     Path(path).mkdir(parents=True, exist_ok=True)
+
+
+# ==================== 内存管理工具 (v1.0+) ====================
+
+
+def jade_text_create(text: str) -> Optional[bytes]:
+    """创建安全文本指针
+
+    JadeView 1.0+ 支持 IPC 回调直接返回文本响应。
+    此函数使用 DLL 的 jade_text_create 函数创建安全的文本指针，
+    适用于需要向前端发送复杂文本响应的场景。
+
+    注意：对于普通事件处理（阻止/允许），直接返回 True/False 或 1/0 即可，
+    SDK 会自动处理。此函数主要用于高级 IPC 文本响应场景。
+
+    Args:
+        text: 要转换的文本
+
+    Returns:
+        安全的文本指针 (bytes)，或 None 如果 DLL 未加载
+
+    Example:
+        # 用于需要直接返回文本的 IPC 场景
+        result_ptr = jade_text_create("响应数据")
+    """
+    try:
+        from .core import DLLManager
+
+        dll = DLLManager()
+        if dll.is_loaded() and dll.has_function("jade_text_create"):
+            return dll.jade_text_create(text.encode("utf-8"))
+    except Exception:
+        pass
+    # 降级处理：直接返回 bytes
+    return text.encode("utf-8")
+
+
+def jade_text_free(ptr: bytes) -> None:
+    """释放由 jade_text_create 创建的文本指针
+
+    注意：通常不需要手动调用此函数，DLL 会自动管理内存。
+    只有在特殊情况下需要手动释放内存时才使用。
+
+    Args:
+        ptr: jade_text_create 返回的指针
+    """
+    try:
+        from .core import DLLManager
+
+        dll = DLLManager()
+        if dll.is_loaded() and dll.has_function("jade_text_free"):
+            dll.jade_text_free(ptr)
+    except Exception:
+        pass

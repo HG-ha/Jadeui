@@ -15,19 +15,20 @@ JadeUI 应用打包脚本
 
 import argparse
 import platform
-import re
 import subprocess
 import sys
 from pathlib import Path
 
 # Nuitka 安装命令
-NUITKA_INSTALL_CMD = "pip install https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip"
+NUITKA_INSTALL_CMD = (
+    "pip install https://github.com/HG-ha/jadeui/raw/main/scripts/nuitka-4.0.rc7.zip"
+)
 
 
 def check_nuitka() -> tuple[bool, str | None]:
     """
     检查 Nuitka 是否已安装及版本
-    
+
     Returns:
         (是否已安装, 版本号或None)
     """
@@ -72,7 +73,7 @@ def get_jadeui_dll_path() -> Path | None:
         arch = "x86"
     # 新格式: JadeView_win_{arch}_static_v{version}
     # 由于不知道确切版本，尝试查找匹配的目录
-    
+
     def find_matching_dir(base_path: Path) -> Path | None:
         """查找匹配的 DLL 目录"""
         if not base_path.exists():
@@ -187,7 +188,7 @@ def build(
         print("或安装 PyPI 稳定版 (onefile 需要目标系统有 VC++ 运行时):")
         print("  pip install nuitka")
         return 1
-    
+
     # 检查版本是否是 4.0+
     is_4x = nuitka_version and (nuitka_version.startswith("4.") or nuitka_version.startswith("5."))
     if not is_4x and onefile:
@@ -237,7 +238,6 @@ def build(
         else:
             print("⚠️  警告: 未找到 JadeUI DLL，打包后的程序可能无法运行")
             print("   请确保已安装 jadeui 库或 DLL 文件存在")
-
 
     # 构建 Nuitka 命令
     cmd = [

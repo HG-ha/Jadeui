@@ -32,13 +32,13 @@ const theme = ref('dark')
 function toggleTheme() {
   theme.value = theme.value === 'dark' ? 'light' : 'dark'
   if (window.jade) {
-    window.jade.ipcSend('router:setTheme', theme.value)
+    window.jade.invoke('router:setTheme', theme.value)
   }
 }
 
 function windowAction(action) {
   if (window.jade) {
-    window.jade.ipcSend('windowAction', action)
+    window.jade.invoke('windowAction', action)
   }
 }
 </script>

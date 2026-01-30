@@ -2,36 +2,58 @@
 JadeUI Type Definitions
 
 ctypes structures and callback type definitions for JadeView DLL interface.
+
+JadeView 1.0+ 重要变更:
+回调函数返回 const char* 类型，需使用 jade_text_create 创建安全指针。
+- 返回 NULL (None): 允许操作
+- 返回 "1": 阻止操作
+- 返回其他文本: IPC 响应数据
 """
 
 import ctypes
+
+# ==================== Callback Function Types ====================
+# JadeView: 回调类型定义
+# 使用 WINFUNCTYPE (stdcall) - JadeView DLL 使用 stdcall 调用约定
+import sys
 from typing import Callable, Optional
 
-# Callback function types
+if sys.platform == "win32":
+    _FUNCTYPE = ctypes.WINFUNCTYPE
+else:
+    _FUNCTYPE = ctypes.CFUNCTYPE
+
+# 事件回调: window_id, event_data -> void
+# 用于通过 jade_on 注册的所有事件 (app-ready, load, file-drop 等)
+GenericWindowEventCallback = _FUNCTYPE(
+    None,  # 返回 void
+    ctypes.c_uint,
+    ctypes.c_char_p,
+)
+
+# IPC 回调 (jade.invoke): window_id, message -> void*
+# 返回 jade_text_create 创建的指针，或 0/NULL 表示无返回
+IpcCallback = _FUNCTYPE(
+    ctypes.c_void_p,  # 返回 void*
+    ctypes.c_uint,
+    ctypes.c_char_p,
+)
+
+# 应用就绪回调: 与通用事件回调相同
+AppReadyCallback = GenericWindowEventCallback
+
+# 所有窗口关闭回调: 与通用事件回调相同
+WindowAllClosedCallback = GenericWindowEventCallback
+
+# file-drop 事件回调: 与通用事件回调相同
+FileDropCallback = GenericWindowEventCallback
+
+# ==================== Legacy Callback Types ====================
+
 WindowEventCallback = ctypes.CFUNCTYPE(
     ctypes.c_int, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_char_p
 )
 PageLoadCallback = ctypes.CFUNCTYPE(None, ctypes.c_uint32, ctypes.c_char_p, ctypes.c_char_p)
-# file-drop 事件回调：window_id, json_data
-# json_data 格式: {"files": ["文件路径1", "文件路径2"], "x": 位置X, "y": 位置Y}
-FileDropCallback = ctypes.CFUNCTYPE(
-    None,
-    ctypes.c_uint32,
-    ctypes.c_char_p,
-)
-
-# 通用窗口事件回调：window_id, json_data
-# 用于通过 jade_on 注册的事件，如 window-resized, window-moved 等
-# window-resized 格式: {"width": 宽度, "height": 高度}
-# window-moved 格式: {"x": x坐标, "y": y坐标}
-GenericWindowEventCallback = ctypes.CFUNCTYPE(
-    ctypes.c_int,
-    ctypes.c_uint32,
-    ctypes.c_char_p,
-)
-AppReadyCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_int, ctypes.c_char_p)
-IpcCallback = ctypes.CFUNCTYPE(ctypes.c_int, ctypes.c_uint32, ctypes.c_char_p)
-WindowAllClosedCallback = ctypes.CFUNCTYPE(ctypes.c_int)
 
 
 # Data structures
@@ -53,7 +75,11 @@ class RGBA(ctypes.Structure):
 
 
 class WebViewWindowOptions(ctypes.Structure):
-    """WebView window configuration options"""
+    """WebView window configuration options
+
+    根据 JadeView 1.2.0 文档更新:
+    https://jade.run/guides/window-api#webviewwindowoptions-结构体
+    """
 
     _fields_ = [
         ("title", ctypes.c_char_p),
@@ -79,6 +105,8 @@ class WebViewWindowOptions(ctypes.Structure):
         ("focus", ctypes.c_int),
         ("hide_window", ctypes.c_int),
         ("use_page_icon", ctypes.c_int),
+        ("borderless", ctypes.c_int),  # JadeView 0.2.1+: 无边框模式
+        ("content_protection", ctypes.c_int),  # JadeView 1.1+: 内容保护（禁止截图）
     ]
 
     def __init__(
@@ -106,6 +134,8 @@ class WebViewWindowOptions(ctypes.Structure):
         focus: bool = True,
         hide_window: bool = False,
         use_page_icon: bool = True,
+        borderless: bool = False,
+        content_protection: bool = False,
     ):
         if background_color is None:
             background_color = RGBA(255, 255, 255, 255)
@@ -134,6 +164,8 @@ class WebViewWindowOptions(ctypes.Structure):
             int(focus),
             int(hide_window),
             int(use_page_icon),
+            int(borderless),
+            int(content_protection),
         )
 
 

@@ -72,6 +72,10 @@ def _extract_state(d: Dict) -> tuple:
     return (d.get("isMaximized", False),)
 
 
+def _extract_fullscreen(d: Dict) -> tuple:
+    return (d.get("fullscreen", False),)
+
+
 def _extract_url(d: Dict) -> tuple:
     return (d.get("url", ""),)
 
@@ -102,6 +106,7 @@ _EVENT_EXTRACTORS: Dict[str, Callable[[Dict], tuple]] = {
     "window-resized": _extract_resize,
     "window-moved": _extract_move,
     "window-state-changed": _extract_state,
+    "window-fullscreen": _extract_fullscreen,  # v1.2+
     "window-focused": _extract_none,
     "window-blurred": _extract_none,
     "window-closing": _extract_none,
@@ -235,7 +240,7 @@ class Window(EventEmitter):
         # WebView settings
         self._options.setdefault("autoplay", False)
         self._options.setdefault("background_throttling", False)
-        self._options.setdefault("disable_right_click", True)
+        self._options.setdefault("disable_right_click", False)
         self._options.setdefault("user_agent", None)
         self._options.setdefault("preload_js", None)
         self._options.setdefault("allow_fullscreen", True)  # JadeView 0.2.1+
@@ -254,15 +259,16 @@ class Window(EventEmitter):
         self._js_callback_id_counter: int = 0
 
     # 需要通过 jade_on 注册到 DLL 的事件列表
-    # 参考: https://jade.run/guides/events/event-types
+    # 参考: https://jade.run/guides/communication-api
     JADE_ON_EVENTS = {
         # 窗口事件
         "window-resized",  # {"width": 宽度, "height": 高度}
         "window-moved",  # {"x": x坐标, "y": y坐标}
         "window-state-changed",  # {"isMaximized": 布尔值}
+        "window-fullscreen",  # {"fullscreen": 布尔值} (v1.2+)
         "window-focused",  # {}
         "window-blurred",  # {}
-        "window-closing",  # {} - 可返回 1 阻止关闭
+        "window-closing",  # {} - 可返回 "1" 阻止关闭
         "window-created",  # {}
         "window-closed",  # {}
         "window-destroyed",  # {}
@@ -275,7 +281,8 @@ class Window(EventEmitter):
         "webview-page-title-updated",  # {"title": "新标题", "window_id": 窗口ID}
         "webview-page-icon-updated",  # JSON对象
         "favicon-updated",  # {"favicon": "图标URL"}
-        "webview-download-started",  # {"url": "下载URL", ...} 可返回1阻止 (v0.3.1+)
+        "webview-download-started",  # {"url": "下载URL", ...} 可返回"1"阻止 (v0.3.1+)
+        "postmessage-received",  # PostMessage 消息 (v1.0.2+)
         # 其他事件
         "theme-changed",  # {}
         "javascript-result",  # {"callbackId": 回调ID, "result": 执行结果}
@@ -420,6 +427,24 @@ class Window(EventEmitter):
                 print(f"Maximized: {is_maximized}")
         """
         self._register_jade_on_event("window-state-changed", callback)
+        return callback
+
+    def on_fullscreen_changed(self, callback: Callable[[bool], Any]) -> Callable[[bool], Any]:
+        """Register a callback for window fullscreen state change events.
+
+        Note:
+            Requires JadeView DLL version 1.2 or above.
+
+        Args:
+            callback: Function to call when fullscreen state changes.
+                - is_fullscreen (bool): Whether window is in fullscreen mode
+
+        Example:
+            @window.on_fullscreen_changed
+            def handle_fullscreen(is_fullscreen: bool):
+                print(f"Fullscreen: {is_fullscreen}")
+        """
+        self._register_jade_on_event("window-fullscreen", callback)
         return callback
 
     def on_file_dropped(
@@ -574,6 +599,10 @@ class Window(EventEmitter):
         """通用的 jade_on 事件注册器
 
         Uses pre-compiled extractors for high-performance event argument parsing.
+
+        JadeView 1.0+: 返回值使用 jade_text_create 创建安全指针
+        - 返回 NULL: 允许操作
+        - 返回 "1": 阻止操作
         """
         # 添加到本地监听器
         self._listeners[event].append(callback)
@@ -585,10 +614,9 @@ class Window(EventEmitter):
         # 获取预编译的参数提取器（O(1) 查找）
         extractor = _EVENT_EXTRACTORS.get(event)
 
-        # 创建 ctypes 回调
+        # 创建 ctypes 回调 (返回 void)
         @GenericWindowEventCallback
-        def event_callback(window_id: int, json_data: bytes) -> int:
-            result = 0
+        def event_callback(window_id: int, json_data: bytes):
             try:
                 # 解析 JSON
                 data_str = json_data.decode("utf-8") if json_data else "{}"
@@ -602,31 +630,31 @@ class Window(EventEmitter):
                     # 未知事件：传递解析后的字典
                     args = (data_dict,)
 
-                # 调用所有监听器，收集返回值（用于阻止事件）
+                # 调用所有监听器
                 for cb in list(self._listeners.get(event, [])):
                     try:
-                        ret = cb(*args)
-                        # 如果任何回调返回 True 或 1，则阻止事件
-                        # 适用于: window-closing, webview-new-window
-                        if ret is True or ret == 1:
-                            result = 1
+                        cb(*args)
                     except Exception as e:
                         logger.error(f"Error in {event} callback: {e}")
             except Exception as e:
                 logger.error(f"Error in {event} event handler: {e}")
-            return result
 
         # 保存引用防止垃圾回收
         self._callbacks.append(event_callback)
 
-        # 通过 jade_on 注册到 DLL
-        self.dll_manager.jade_on(
+        # 通过 jade_on 注册到 DLL (v1.0+: 返回 callback_id)
+        callback_id = self.dll_manager.jade_on(
             event.encode("utf-8"),
             ctypes.cast(event_callback, ctypes.c_void_p),
         )
 
+        # 保存 callback_id 用于后续 jade_off
+        if not hasattr(self, "_jade_callback_ids"):
+            self._jade_callback_ids: Dict[str, int] = {}
+        self._jade_callback_ids[event] = callback_id
+
         self._registered_jade_events.add(event)
-        logger.info(f"{event} event handler registered with DLL")
+        logger.info(f"{event} event handler registered with DLL (callback_id={callback_id})")
 
     def _register_file_drop_handler(self, callback: Callable[..., Any]) -> None:
         """注册 file-drop 事件处理器到 DLL"""
@@ -637,22 +665,27 @@ class Window(EventEmitter):
         if "file-drop" in self._registered_jade_events:
             return
 
-        # 创建 ctypes 回调
+        # 创建 ctypes 回调 (返回 void)
         @FileDropCallback
-        def file_drop_callback(window_id: int, json_data: bytes) -> None:
+        def file_drop_callback(window_id: int, json_data: bytes):
             self._on_file_drop(window_id, json_data)
 
         # 保存引用防止垃圾回收
         self._callbacks.append(file_drop_callback)
 
-        # 通过 jade_on 注册到 DLL
-        self.dll_manager.jade_on(
+        # 通过 jade_on 注册到 DLL (v1.0+: 返回 callback_id)
+        callback_id = self.dll_manager.jade_on(
             b"file-drop",
             ctypes.cast(file_drop_callback, ctypes.c_void_p),
         )
 
+        # 保存 callback_id 用于后续 jade_off
+        if not hasattr(self, "_jade_callback_ids"):
+            self._jade_callback_ids: Dict[str, int] = {}
+        self._jade_callback_ids["file-drop"] = callback_id
+
         self._registered_jade_events.add("file-drop")
-        logger.info("file-drop event handler registered with DLL")
+        logger.info(f"file-drop event handler registered with DLL (callback_id={callback_id})")
 
     # ==================== Window Lifecycle ====================
 
@@ -784,7 +817,8 @@ class Window(EventEmitter):
         ipc = IPCManager()
 
         @ipc.on("windowAction")
-        def _handle_window_action(window_id: int, action: str) -> int:
+        def _handle_window_action(window_id: int, action: str) -> str:
+            logger.debug(f"windowAction received: window_id={window_id}, action={action}")
             win = Window.get_window_by_id(window_id)
             if win:
                 if action == "close":
@@ -793,7 +827,9 @@ class Window(EventEmitter):
                     win.minimize()
                 elif action == "maximize":
                     win.maximize()
-            return 1
+            else:
+                logger.warning(f"Window not found: {window_id}")
+            return '{"success": true}'
 
         # 保存 window 引用，在 on_ready 中显示
         window = self
@@ -1281,7 +1317,7 @@ class Window(EventEmitter):
         if isinstance(theme, str):
             theme = theme.encode("utf-8")
 
-        # Create window options
+        # Create window options (JadeView 1.2.0+)
         window_options = WebViewWindowOptions(
             title=self._title.encode("utf-8"),
             width=self._width,
@@ -1306,6 +1342,8 @@ class Window(EventEmitter):
             focus=self._options.get("focus", True),
             hide_window=self._options.get("hide_window", False),
             use_page_icon=self._options.get("use_page_icon", True),
+            borderless=self._options.get("borderless", False),  # JadeView 0.2.1+
+            content_protection=self._options.get("content_protection", False),  # JadeView 1.1+
         )
 
         # Prepare WebView settings
@@ -1395,7 +1433,8 @@ class Window(EventEmitter):
             return 0
 
         cls._global_callbacks.append(window_closed_callback)
-        dll.jade_on(
+        cls._global_callback_ids = getattr(cls, "_global_callback_ids", {})
+        cls._global_callback_ids["window-closed"] = dll.jade_on(
             b"window-closed",
             ctypes.cast(window_closed_callback, ctypes.c_void_p),
         )
@@ -1417,7 +1456,7 @@ class Window(EventEmitter):
             return 0
 
         cls._global_callbacks.append(page_load_callback)
-        dll.jade_on(
+        cls._global_callback_ids["webview-did-finish-load"] = dll.jade_on(
             b"webview-did-finish-load",
             ctypes.cast(page_load_callback, ctypes.c_void_p),
         )

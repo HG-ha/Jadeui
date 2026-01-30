@@ -30,6 +30,7 @@ router.page("/", "index.html", title="Vue App")
 # ============ IPC 处理器 ============
 # 前端通过 jade.ipcSend 调用这些处理器
 
+
 @router.ipc.on("api:getUser")
 def get_user(window_id, data):
     user = {"id": 1, "name": "张三", "email": "zhang@example.com"}
@@ -45,6 +46,7 @@ def save_data(window_id, data):
 
 
 # ============ 应用启动 ============
+
 
 @app.on_ready
 def on_ready():
@@ -72,4 +74,3 @@ def on_ready():
 if __name__ == "__main__":
     app.initialize()
     app.run()
-

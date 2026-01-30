@@ -17,7 +17,7 @@ import sys
 
 sys.path.insert(0, os.path.dirname(os.path.dirname(os.path.dirname(__file__))))
 
-from jadeui import JadeUIApp, Window, Events
+from jadeui import Events, JadeUIApp, Window
 from jadeui.ipc import IPCManager
 from jadeui.server import LocalServer
 from jadeui.window import Backdrop, Theme
@@ -104,15 +104,10 @@ def on_ready():
         # 发送文件信息到前端
         file_info = {
             "files": [
-                {
-                    "path": f,
-                    "name": os.path.basename(f),
-                    "isDir": os.path.isdir(f)
-                }
-                for f in files
+                {"path": f, "name": os.path.basename(f), "isDir": os.path.isdir(f)} for f in files
             ],
             "x": x,
-            "y": y
+            "y": y,
         }
         ipc.send(window.id, "fileDrop", json.dumps(file_info))
 
@@ -123,4 +118,3 @@ def on_ready():
 if __name__ == "__main__":
     app.initialize()
     app.run()
-

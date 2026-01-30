@@ -7,7 +7,7 @@ JadeUI 简单示例 - 使用本地服务器
 - 自动注册窗口操作处理器
 
 运行方式:
-    python examples/simple/app_local.py
+    python examples/simple/app.py
 """
 
 from jadeui import Backdrop, Theme, Window

@@ -61,7 +61,7 @@ class IPCManager:
 
         self._handlers[channel] = handler
 
-        # Create ctypes callback
+        # Create ctypes callback (返回 void* - jade_text_create 指针)
         @IpcCallback
         def ipc_callback(window_id, message):
             return self._handle_message(window_id, channel, message)
@@ -105,26 +105,43 @@ class IPCManager:
         """Broadcast an IPC message to all windows (not implemented)"""
         logger.warning("broadcast() not implemented - would need window enumeration")
 
-    def _handle_message(self, window_id: int, channel: str, message: bytes) -> int:
-        """Internal message handler dispatcher"""
+    def _handle_message(self, window_id: int, channel: str, message: bytes):
+        """Internal message handler dispatcher
+
+        IPC 回调返回 void* (jade_text_create 创建的指针，或 0 表示无返回)
+        """
         try:
             message_str = message.decode("utf-8") if message else ""
+            logger.debug(
+                f"IPC message received: channel={channel}, window_id={window_id}, message={message_str}"
+            )
 
             if channel in self._handlers:
                 handler = self._handlers[channel]
                 result = handler(window_id, message_str)
+                logger.debug(f"IPC handler for '{channel}' returned: {result}")
 
-                # Log the result if it's meaningful
+                # 如果有返回值，使用 jade_text_create 创建文本
                 if result is not None:
-                    logger.debug(f"IPC handler for '{channel}' returned: {result}")
+                    response = str(result)
+                    response_bytes = response.encode("utf-8")
 
-                return 1 if result is not None else 0
+                    # jade_text_create 现在返回 c_void_p，可以直接返回
+                    ptr = self.dll_manager.jade_text_create(response_bytes)
+                    if ptr:
+                        return ptr
+
+                return 0  # 无返回数据
+
             else:
                 logger.warning(f"No handler registered for IPC channel: {channel}")
                 return 0
 
         except Exception as e:
             logger.error(f"Error in IPC handler for channel '{channel}': {e}")
+            import traceback
+
+            traceback.print_exc()
             return 0
 
     def on(self, channel: str) -> Callable[[IPCHandler], IPCHandler]:

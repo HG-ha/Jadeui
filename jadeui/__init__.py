@@ -67,7 +67,7 @@ from .router import Router
 from .server import LocalServer
 from .window import Backdrop, Theme, Window
 
-__version__ = "0.5.0"
+__version__ = "1.2.0"
 __author__ = "JadeView Team"
 __license__ = "MIT"
 
@@ -103,7 +103,14 @@ __all__ = [
     "DLL_VERSION",
     # Utilities
     "utils",
+    # Memory management (v1.0+)
+    "jade_text_create",
+    "jade_text_free",
 ]
+
+
+# Import memory management functions
+from .utils import jade_text_create, jade_text_free
 
 
 def create_app(
