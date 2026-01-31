@@ -62,12 +62,14 @@ from .exceptions import (
     ServerError,
     WindowCreationError,
 )
+from .dialog import Dialog, MessageBoxType, OpenDialogProperties
 from .ipc import IPCManager
+from .notification import Notification
 from .router import Router
 from .server import LocalServer
 from .window import Backdrop, Theme, Window
 
-__version__ = "1.2.1"
+__version__ = "1.3.0"
 __author__ = "JadeView Team"
 __license__ = "MIT"
 
@@ -78,6 +80,12 @@ __all__ = [
     "IPCManager",
     "LocalServer",
     "Router",
+    # Dialog API (v1.3.0+)
+    "Dialog",
+    "MessageBoxType",
+    "OpenDialogProperties",
+    # Notification API (v1.3.0+)
+    "Notification",
     # Constants
     "Theme",
     "Backdrop",

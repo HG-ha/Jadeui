@@ -17,6 +17,7 @@ Window(title="My App", url="https://example.com").run()
 | [simple](./simple/) | **最简示例** - 几行代码创建应用 | ⭐ |
 | [calculator](./calculator/) | 简单计算器，演示基础窗口和 IPC | ⭐⭐ |
 | [backdrop_demo](./backdrop_demo/) | Windows 11 Mica/Acrylic 背景效果 | ⭐⭐ |
+| [dialog_notification_demo](./dialog_notification_demo/) | **对话框和通知** (v1.3.0+) | ⭐⭐ |
 | [router_demo](./router_demo/) | 内置路由系统，多页面应用 | ⭐⭐⭐ |
 | [custom_template](./custom_template/) | 自定义 HTML 模板 | ⭐⭐⭐ |
 | [vue_app](./vue_app/) | Vue.js 前端框架集成 | ⭐⭐⭐ |

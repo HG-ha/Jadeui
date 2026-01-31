@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dialog & Notification Demo</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        
+        body {
+            font-family: 'Segoe UI', system-ui, sans-serif;
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            min-height: 100vh;
+            color: #eee;
+        }
+
+        .container {
+            max-width: 700px;
+            margin: 0 auto;
+            padding: 30px 20px;
+        }
+
+        h1 {
+            text-align: center;
+            font-weight: 300;
+            font-size: 1.8rem;
+            margin-bottom: 8px;
+            background: linear-gradient(90deg, #00d2ff, #3a7bd5);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        .subtitle {
+            text-align: center;
+            opacity: 0.5;
+            font-size: 0.85rem;
+            margin-bottom: 30px;
+        }
+
+        .section {
+            background: rgba(255,255,255,0.05);
+            border-radius: 12px;
+            padding: 20px;
+            margin-bottom: 16px;
+        }
+
+        .section h2 {
+            font-size: 0.95rem;
+            font-weight: 500;
+            margin-bottom: 14px;
+            opacity: 0.9;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .row {
+            display: flex;
+            gap: 12px;
+            margin-bottom: 12px;
+        }
+
+        .row:last-child {
+            margin-bottom: 0;
+        }
+
+        .label {
+            width: 80px;
+            font-size: 0.8rem;
+            opacity: 0.6;
+            display: flex;
+            align-items: center;
+        }
+
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+            flex: 1;
+        }
+
+        button {
+            padding: 8px 16px;
+            border: none;
+            border-radius: 6px;
+            background: rgba(255,255,255,0.1);
+            color: #fff;
+            font-size: 0.85rem;
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        button:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-1px);
+        }
+
+        .btn-frontend {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+        }
+
+        .btn-backend {
+            background: linear-gradient(90deg, #11998e, #38ef7d);
+        }
+
+        .btn-frontend:hover, .btn-backend:hover {
+            opacity: 0.9;
+        }
+
+        .tag {
+            font-size: 0.7rem;
+            padding: 2px 6px;
+            border-radius: 4px;
+            margin-left: auto;
+        }
+
+        .tag-frontend {
+            background: rgba(102, 126, 234, 0.3);
+            color: #a5b4fc;
+        }
+
+        .tag-backend {
+            background: rgba(56, 239, 125, 0.2);
+            color: #6ee7b7;
+        }
+
+        .hint {
+            font-size: 0.75rem;
+            opacity: 0.4;
+            margin-top: 10px;
+        }
+
+        #result {
+            background: rgba(0,0,0,0.3);
+            border-radius: 8px;
+            padding: 12px;
+            margin-top: 16px;
+            font-family: monospace;
+            font-size: 0.8rem;
+            min-height: 60px;
+            white-space: pre-wrap;
+            opacity: 0.8;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🎯 Dialog & Notification</h1>
+        <p class="subtitle">JadeView 1.3.0+ 对话框与通知 API 演示</p>
+
+        <!-- 文件对话框 -->
+        <div class="section">
+            <h2>📁 文件对话框 <span class="tag tag-frontend">前端 jade.dialog</span> <span class="tag tag-backend">后端 Dialog</span></h2>
+            <div class="row">
+                <span class="label">🌐 前端</span>
+                <div class="btn-group">
+                    <button class="btn-frontend" onclick="openFileFrontend()">打开文件</button>
+                    <button class="btn-frontend" onclick="saveFileFrontend()">保存文件</button>
+                </div>
+            </div>
+            <div class="row">
+                <span class="label">🐍 后端</span>
+                <div class="btn-group">
+                    <button class="btn-backend" onclick="jade.invoke('openFile')">打开文件</button>
+                    <button class="btn-backend" onclick="jade.invoke('saveFile')">保存文件</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 消息框 -->
+        <div class="section">
+            <h2>💬 消息框 <span class="tag tag-frontend">前端</span> <span class="tag tag-backend">后端</span></h2>
+            <div class="row">
+                <span class="label">🌐 前端</span>
+                <div class="btn-group">
+                    <button class="btn-frontend" onclick="showMessageFrontend('info')">提示</button>
+                    <button class="btn-frontend" onclick="showMessageFrontend('confirm')">确认</button>
+                    <button class="btn-frontend" onclick="showMessageFrontend('error')">错误</button>
+                </div>
+            </div>
+            <div class="row">
+                <span class="label">🐍 后端</span>
+                <div class="btn-group">
+                    <button class="btn-backend" onclick="jade.invoke('showMessage', 'info')">提示</button>
+                    <button class="btn-backend" onclick="jade.invoke('showMessage', 'confirm')">确认</button>
+                    <button class="btn-backend" onclick="jade.invoke('showMessage', 'error')">错误</button>
+                </div>
+            </div>
+        </div>
+
+        <!-- 桌面通知 -->
+        <div class="section">
+            <h2>🔔 桌面通知 <span class="tag tag-backend">仅后端 Notification</span></h2>
+            <div class="row">
+                <span class="label">🐍 后端</span>
+                <div class="btn-group">
+                    <button class="btn-backend" onclick="jade.invoke('notify', 'simple')">简单通知</button>
+                    <button class="btn-backend" onclick="jade.invoke('notify', 'buttons')">下载完成</button>
+                    <button class="btn-backend" onclick="jade.invoke('notify', 'timeout')">新消息</button>
+                </div>
+            </div>
+            <p class="hint">通知事件会输出到 Python 控制台</p>
+        </div>
+
+        <!-- 结果显示 -->
+        <div id="result">等待操作...</div>
+    </div>
+
+    <script>
+        function log(msg) {
+            document.getElementById('result').textContent = msg;
+            console.log(msg);
+        }
+
+        // ==================== 前端 API ====================
+
+        async function openFileFrontend() {
+            try {
+                log('调用 jade.dialog.showOpenDialog...');
+                const result = await jade.dialog.showOpenDialog({
+                    title: '选择文件 (前端)',
+                    filters: [
+                        { name: '图片', extensions: ['png', 'jpg', 'gif'] },
+                        { name: '所有文件', extensions: ['*'] }
+                    ],
+                    properties: ['openFile', 'multiSelections']
+                });
+                log('前端打开文件结果:\n' + JSON.stringify(result, null, 2));
+            } catch (e) {
+                log('错误: ' + e.message);
+            }
+        }
+
+        async function saveFileFrontend() {
+            try {
+                log('调用 jade.dialog.showSaveDialog...');
+                const result = await jade.dialog.showSaveDialog({
+                    title: '保存文件 (前端)',
+                    defaultPath: 'untitled.txt',
+                    filters: [
+                        { name: '文本文件', extensions: ['txt'] },
+                        { name: '所有文件', extensions: ['*'] }
+                    ]
+                });
+                log('前端保存文件结果:\n' + JSON.stringify(result, null, 2));
+            } catch (e) {
+                log('错误: ' + e.message);
+            }
+        }
+
+        async function showMessageFrontend(type) {
+            try {
+                let options = {};
+                if (type === 'info') {
+                    options = {
+                        title: '提示 (前端)',
+                        message: '这是一个信息提示',
+                        type: 'info',
+                        buttons: ['确定']
+                    };
+                } else if (type === 'confirm') {
+                    options = {
+                        title: '确认 (前端)',
+                        message: '确定要继续吗？',
+                        type: 'question',
+                        buttons: ['确定', '取消']
+                    };
+                } else if (type === 'error') {
+                    options = {
+                        title: '错误 (前端)',
+                        message: '发生了一个错误！',
+                        type: 'error',
+                        buttons: ['确定']
+                    };
+                }
+                
+                log('调用 jade.dialog.showMessageBox...');
+                const result = await jade.dialog.showMessageBox(options);
+                log('前端消息框结果:\n' + JSON.stringify(result, null, 2));
+            } catch (e) {
+                log('错误: ' + e.message);
+            }
+        }
+    </script>
+</body>
+</html>

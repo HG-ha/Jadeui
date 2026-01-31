@@ -23,6 +23,8 @@ JadeUI 是 [JadeView](https://jade.run) 的 Python SDK，让你可以使用 Pyth
 - **现代外观** - 支持 Windows 11 Mica/Acrylic 效果
 - **主题切换** - Light/Dark/System 主题
 - **IPC 通信** - Python 与前端双向通信
+- **对话框 API** - 文件选择、消息框 (v1.3.0+)
+- **通知 API** - Windows 原生桌面通知 (v1.3.0+)
 - **打包体积** - 极小的依赖，打包后体积仅有8MB左右
 
 ## 安装

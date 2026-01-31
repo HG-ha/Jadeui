@@ -15,6 +15,10 @@ from typing import TYPE_CHECKING, Any, List, Optional
 
 from ..exceptions import DLLLoadError
 from .types import (
+    MessageBoxParams,
+    NotificationParams,
+    OpenDialogParams,
+    SaveDialogParams,
     WebViewSettings,
     WebViewWindowOptions,
 )
@@ -346,6 +350,60 @@ class DLLManager:
             "get_webview_version",
             [ctypes.c_char_p, ctypes.c_size_t],
             ctypes.c_int,
+        )
+
+        # ==================== Dialog API (v1.3.0+) ====================
+        # 参考: https://jade.run/guides/dialog-api
+
+        # 显示打开文件对话框
+        # int jade_dialog_show_open_dialog(const OpenDialogParams* params);
+        self._try_bind(
+            "jade_dialog_show_open_dialog",
+            [ctypes.POINTER(OpenDialogParams)],
+            ctypes.c_int,  # 返回 1 成功，0 失败
+        )
+
+        # 显示保存文件对话框
+        # int jade_dialog_show_save_dialog(const SaveDialogParams* params);
+        self._try_bind(
+            "jade_dialog_show_save_dialog",
+            [ctypes.POINTER(SaveDialogParams)],
+            ctypes.c_int,  # 返回 1 成功，0 失败
+        )
+
+        # 显示消息框
+        # int jade_dialog_show_message_box(const MessageBoxParams* params);
+        self._try_bind(
+            "jade_dialog_show_message_box",
+            [ctypes.POINTER(MessageBoxParams)],
+            ctypes.c_int,  # 返回 1 成功，0 失败
+        )
+
+        # 显示错误框（简化的消息框）
+        # int jade_dialog_show_error_box(u32 window_id, const char* title, const char* content);
+        self._try_bind(
+            "jade_dialog_show_error_box",
+            [ctypes.c_uint32, ctypes.c_char_p, ctypes.c_char_p],  # window_id, title, content
+            ctypes.c_int,
+        )
+
+        # ==================== Notification API (v1.3.0+) ====================
+        # 参考: https://jade.run/guides/notification
+
+        # 注册通知应用到 Windows 注册表
+        # int set_notification_app_registry(const char* app_name, const char* icon_path);
+        self._try_bind(
+            "set_notification_app_registry",
+            [ctypes.c_char_p, ctypes.c_char_p],  # app_name, icon_path
+            ctypes.c_int,  # 返回 1 成功，0 失败
+        )
+
+        # 显示桌面通知
+        # int show_notification(const NotificationParams* params);
+        self._try_bind(
+            "show_notification",
+            [ctypes.POINTER(NotificationParams)],
+            ctypes.c_int,  # 返回 1 成功，0 失败
         )
 
     def is_loaded(self) -> bool:

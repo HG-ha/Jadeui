@@ -207,6 +207,199 @@ class WebViewSettings(ctypes.Structure):
         )
 
 
+# ==================== Dialog Params (v1.3.0+) ====================
+# 根据官方文档: https://jade.run/guides/dialog-api#结构体定义
+
+# 对话框回调函数类型: void (*callback)(const char*)
+DialogCallback = _FUNCTYPE(None, ctypes.c_char_p)
+
+
+class OpenDialogParams(ctypes.Structure):
+    """打开文件对话框参数结构体
+
+    用于 jade_dialog_show_open_dialog 函数。
+    类似 Electron 的 dialog.showOpenDialog API。
+
+    JadeView 1.3.0+
+    参考: https://jade.run/guides/dialog-api#jade_dialog_show_open_dialog
+    """
+
+    _fields_ = [
+        ("window_id", ctypes.c_uint32),  # 窗口 ID
+        ("title", ctypes.c_char_p),  # 对话框标题
+        ("default_path", ctypes.c_char_p),  # 默认打开路径
+        ("button_label", ctypes.c_char_p),  # 确认按钮的自定义标签
+        ("filters", ctypes.c_char_p),  # 文件过滤器（JSON格式）
+        (
+            "properties",
+            ctypes.c_char_p,
+        ),  # 对话框特性（逗号分隔）: openFile,openDirectory,multiSelections,showHiddenFiles
+        ("blocking", ctypes.c_int),  # 是否阻塞进程
+        ("callback", ctypes.c_void_p),  # 回调函数: void (*callback)(const char*)
+    ]
+
+    def __init__(
+        self,
+        window_id: int = 0,
+        title: Optional[bytes] = None,
+        default_path: Optional[bytes] = None,
+        button_label: Optional[bytes] = None,
+        filters: Optional[bytes] = None,
+        properties: Optional[bytes] = None,
+        blocking: int = 1,
+        callback: Optional[ctypes.c_void_p] = None,
+    ):
+        super().__init__(
+            window_id,
+            title,
+            default_path,
+            button_label,
+            filters,
+            properties,
+            blocking,
+            callback,
+        )
+
+
+class SaveDialogParams(ctypes.Structure):
+    """保存文件对话框参数结构体
+
+    用于 jade_dialog_show_save_dialog 函数。
+    类似 Electron 的 dialog.showSaveDialog API。
+
+    JadeView 1.3.0+
+    参考: https://jade.run/guides/dialog-api#jade_dialog_show_save_dialog
+    """
+
+    _fields_ = [
+        ("window_id", ctypes.c_uint32),  # 窗口 ID
+        ("title", ctypes.c_char_p),  # 对话框标题
+        ("default_path", ctypes.c_char_p),  # 默认保存路径
+        ("button_label", ctypes.c_char_p),  # 确认按钮的自定义标签
+        ("filters", ctypes.c_char_p),  # 文件过滤器（JSON格式）
+        ("blocking", ctypes.c_int),  # 是否阻塞进程
+        ("callback", ctypes.c_void_p),  # 回调函数: void (*callback)(const char*)
+    ]
+
+    def __init__(
+        self,
+        window_id: int = 0,
+        title: Optional[bytes] = None,
+        default_path: Optional[bytes] = None,
+        button_label: Optional[bytes] = None,
+        filters: Optional[bytes] = None,
+        blocking: int = 1,
+        callback: Optional[ctypes.c_void_p] = None,
+    ):
+        super().__init__(
+            window_id,
+            title,
+            default_path,
+            button_label,
+            filters,
+            blocking,
+            callback,
+        )
+
+
+class MessageBoxParams(ctypes.Structure):
+    """消息框参数结构体
+
+    用于 jade_dialog_show_message_box 函数。
+    类似 Electron 的 dialog.showMessageBox API。
+
+    JadeView 1.3.0+
+    参考: https://jade.run/guides/dialog-api#jade_dialog_show_message_box
+    """
+
+    _fields_ = [
+        ("window_id", ctypes.c_uint32),  # 窗口 ID
+        ("title", ctypes.c_char_p),  # 消息框标题
+        ("message", ctypes.c_char_p),  # 消息框内容
+        ("detail", ctypes.c_char_p),  # 详细信息
+        ("buttons", ctypes.c_char_p),  # 按钮列表（使用|分隔，如"确定|取消"）
+        ("default_id", ctypes.c_int),  # 默认选中的按钮索引
+        ("cancel_id", ctypes.c_int),  # 取消按钮的索引
+        ("type_", ctypes.c_char_p),  # 消息框类型: "none", "info", "error", "warning", "question"
+        ("blocking", ctypes.c_int),  # 是否阻塞进程
+        ("callback", ctypes.c_void_p),  # 回调函数: void (*callback)(const char*)
+    ]
+
+    def __init__(
+        self,
+        window_id: int = 0,
+        title: Optional[bytes] = None,
+        message: Optional[bytes] = None,
+        detail: Optional[bytes] = None,
+        buttons: Optional[bytes] = None,
+        default_id: int = 0,
+        cancel_id: int = -1,
+        type_: Optional[bytes] = None,
+        blocking: int = 1,
+        callback: Optional[ctypes.c_void_p] = None,
+    ):
+        super().__init__(
+            window_id,
+            title,
+            message,
+            detail,
+            buttons,
+            default_id,
+            cancel_id,
+            type_,
+            blocking,
+            callback,
+        )
+
+
+# ==================== Notification Params (v1.3.0+) ====================
+# 根据官方文档: https://jade.run/guides/notification
+
+
+class NotificationParams(ctypes.Structure):
+    """通知参数结构体
+
+    用于 show_notification 函数。
+    支持 Windows 桌面通知。
+
+    JadeView 1.3.0+
+    参考: https://jade.run/guides/notification#数据结构
+    """
+
+    _fields_ = [
+        ("summary", ctypes.c_char_p),  # 通知标题（必填字段，不能为空）
+        ("body", ctypes.c_char_p),  # 通知内容（可选）
+        ("icon", ctypes.c_char_p),  # 图标路径（绝对路径，可选）
+        ("timeout", ctypes.c_int),  # 超时时间（毫秒，<= 0 时使用默认超时）
+        ("button1", ctypes.c_char_p),  # 第一个按钮文本（可选）
+        ("button2", ctypes.c_char_p),  # 第二个按钮文本（可选）
+        ("text3", ctypes.c_char_p),  # 第三行文本（可选）
+        ("action", ctypes.c_char_p),  # 动作参数（可选，会以 arguments 传参）
+    ]
+
+    def __init__(
+        self,
+        summary: Optional[bytes] = None,
+        body: Optional[bytes] = None,
+        icon: Optional[bytes] = None,
+        timeout: int = 0,
+        button1: Optional[bytes] = None,
+        button2: Optional[bytes] = None,
+        text3: Optional[bytes] = None,
+        action: Optional[bytes] = None,
+    ):
+        super().__init__(
+            summary,
+            body,
+            icon,
+            timeout,
+            button1,
+            button2,
+            text3,
+            action,
+        )
+
+
 # Python callback types for user code
 WindowEventHandler = Callable[[int, str, str], int]
 PageLoadHandler = Callable[[int, str, str], None]

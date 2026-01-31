@@ -11,10 +11,15 @@ from .lifecycle import LifecycleManager
 from .types import (
     RGBA,
     AppReadyCallback,
+    DialogCallback,
     FileDropCallback,
     GenericWindowEventCallback,
     IpcCallback,
+    MessageBoxParams,
+    NotificationParams,
+    OpenDialogParams,
     PageLoadCallback,
+    SaveDialogParams,
     WebViewSettings,
     WebViewWindowOptions,
     WindowAllClosedCallback,
@@ -76,6 +81,12 @@ __all__ = [
     "IpcCallback",
     "WindowAllClosedCallback",
     "GenericWindowEventCallback",
+    # Dialog/Notification types (v1.3.0+)
+    "DialogCallback",
+    "OpenDialogParams",
+    "SaveDialogParams",
+    "MessageBoxParams",
+    "NotificationParams",
     # 安全文本指针辅助函数
     "create_safe_text",
     "create_block_response",

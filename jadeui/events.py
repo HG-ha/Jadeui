@@ -306,6 +306,26 @@ class Events:
         - @window.on_file_dropped      -> FILE_DROP
         - @window.on_js_result         -> JAVASCRIPT_RESULT
 
+    4. 通知事件 (v1.3+) - 通过 Notification.on() 注册:
+        ```python
+        from jadeui import Notification
+
+        @Notification.on("action")
+        def handle_action(data):
+            # data = {"action": "action_0", "title": "按钮文本", "arguments": "你的action"}
+            print(f"按钮点击: {data}")
+
+        @Notification.on("dismissed")
+        def handle_dismissed(data):
+            print("通知被关闭")
+        ```
+
+    Notification 事件列表:
+        - @Notification.on(Events.NOTIFICATION_ACTION)    -> 用户点击按钮
+        - @Notification.on(Events.NOTIFICATION_SHOWN)     -> 通知显示成功
+        - @Notification.on(Events.NOTIFICATION_DISMISSED) -> 通知被关闭
+        - @Notification.on(Events.NOTIFICATION_FAILED)    -> 通知显示失败
+
     回调返回值说明:
         - 返回 1 或 True 阻止操作
         - 返回 0 或 False/None 允许操作
@@ -352,6 +372,14 @@ class Events:
 
     # ==================== 主题事件 ====================
     THEME_CHANGED = "theme-changed"  # 系统主题改变
+
+    # ==================== 通知事件 (v1.3+) ====================
+    # 注册方式: @Notification.on(Events.NOTIFICATION_ACTION)
+    # 参考: https://jade.run/guides/notification
+    NOTIFICATION_ACTION = "notification-action"  # 用户点击通知按钮
+    NOTIFICATION_SHOWN = "notification-shown"  # 通知成功显示
+    NOTIFICATION_DISMISSED = "notification-dismissed"  # 通知被关闭
+    NOTIFICATION_FAILED = "notification-failed"  # 通知显示失败
 
     # ==================== 其他事件 ====================
     UPDATE_WINDOW_ICON = "update-window-icon"  # 更新窗口图标
