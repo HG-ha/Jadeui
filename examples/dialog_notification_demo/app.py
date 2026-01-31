@@ -11,7 +11,7 @@ JadeUI 对话框与通知示例
 
 import os
 
-from jadeui import Dialog, IPCManager, Notification, Window, Events
+from jadeui import Dialog, Events, IPCManager, Notification, Window
 
 # IPC 管理器
 ipc = IPCManager()

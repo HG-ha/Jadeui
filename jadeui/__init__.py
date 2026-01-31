@@ -44,6 +44,7 @@ With IPC:
 from . import utils
 from .app import JadeUIApp
 from .core.types import RGBA, WebViewSettings, WebViewWindowOptions
+from .dialog import Dialog, MessageBoxType, OpenDialogProperties
 from .downloader import (
     VERSION as DLL_VERSION,
 )
@@ -62,7 +63,6 @@ from .exceptions import (
     ServerError,
     WindowCreationError,
 )
-from .dialog import Dialog, MessageBoxType, OpenDialogProperties
 from .ipc import IPCManager
 from .notification import Notification
 from .router import Router

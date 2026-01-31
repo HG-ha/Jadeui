@@ -5,7 +5,6 @@ JadeUI 自定义模板示例
 """
 
 import json
-import os
 
 from jadeui import JadeUIApp, Router
 

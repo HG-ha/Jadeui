@@ -55,7 +55,7 @@ from __future__ import annotations
 import ctypes
 import json
 import logging
-from typing import Any, Callable, Dict, List, Optional, Union
+from typing import Any, Callable, Dict, List, Optional
 
 from .core import DLLManager
 from .core.types import (
